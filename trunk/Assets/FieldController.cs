@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using coinlines;
+using WSTools;
 
 public class FieldController : MonoBehaviour
 {
 
-    private List<Sprite> Pool;
+    private SpritePool Pool;
     // Start is called before the first frame update
     void Start()
     {
+        Pool = new SpritePool(typeof(Sprite));
+        
+//            CreateNewObject = delegate ( ) { return GameObject.Instantiate<Sprite>( ); }
         
     }
 
