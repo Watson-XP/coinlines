@@ -7,6 +7,7 @@ namespace coinlines {
     public static class TheGame
     {
         public static gameField field;
+
     }
 
     public class gameField
@@ -16,7 +17,7 @@ namespace coinlines {
         public int SizeL => fieldSizeL;
         public int SizeH => fieldSizeH;
 
-        private int minSolution; // minimum elements in line to be collected
+        private int minSolution = 3; // minimum elements in line to be collected
 
         private List<int> FieldData;
 
@@ -30,7 +31,8 @@ namespace coinlines {
         private void Init()
         {
             FieldData = new List<int>(fieldSizeH*fieldSizeL );
-
+            for(int i = 0; i < fieldSizeH * fieldSizeL; i++)
+                FieldData.Add(0);
         }
 
         public int Get(int x, int y)
@@ -47,9 +49,10 @@ namespace coinlines {
 
         private bool InRange(int x, int y, bool onlycheck=false)
         {
+            //if ((x + y * fieldSizeL) < FieldData.Count) return true;
             if(( x < fieldSizeL ) && ( y < fieldSizeH )) return true;
             if(onlycheck) return false;
-            throw new IndexOutOfRangeException( );
+            throw new IndexOutOfRangeException(string.Format("x={0}, y={1}, size={2} ", x, y, FieldData.Count ));
         }
 
         public void FindRows( )
@@ -83,6 +86,14 @@ namespace coinlines {
                     }
                 }
             }
+        }
+
+        public void SetFill(int seed)
+        {
+            Random random = new Random(seed);
+            for(int x = 0; x < fieldSizeL; x++)
+                for(int y = 0; y < fieldSizeH; y++)
+                    Set(x, y, random.Next(1, 4));
         }
     }  
 

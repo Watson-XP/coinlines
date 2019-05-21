@@ -8,8 +8,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace>
-    </RootNamespace>
+    <RootNamespace></RootNamespace>
     <ProjectGuid>{AB04A748-5787-C481-ACA7-FBB44CD101C5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -53,9 +52,6 @@
     <UnityVersion>2018.3.11f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ObjectPool">
-      <HintPath>..\shared\ObjectPool\ObjectPool\bin\Debug\ObjectPool.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>D:\unity\Editor\Data\Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
@@ -64,9 +60,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Class1.cs" />
-    <Compile Include="Assets\FieldController.cs" />
     <Compile Include="Assets\scripts\engine\base.cs" />
+    <Compile Include="Assets\scripts\engine\SpritePool.cs" />
+    <Compile Include="Assets\scripts\FieldController.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>D:/projects/coinsline/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
@@ -282,6 +278,9 @@
     </Reference>
     <Reference Include="UnityEngine.SpatialTracking">
       <HintPath>D:/unity/Editor/Data/UnityExtensions/Unity/UnitySpatialTracking/RuntimeEditor/UnityEngine.SpatialTracking.dll</HintPath>
+    </Reference>
+    <Reference Include="objectpool">
+      <HintPath>D:/projects/coinsline/Assets/dll/objectpool.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Editor">
       <HintPath>D:/projects/coinsline/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Editor.dll</HintPath>
