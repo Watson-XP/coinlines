@@ -56,6 +56,8 @@ namespace WSTools
             foreach(SpriteRenderer s in Free)
             {
                 s.gameObject.SetActive(false);
+                if (PoolParent != null)
+                    s.gameObject.transform.SetParent(PoolParent.transform);
             }
         }
     }
