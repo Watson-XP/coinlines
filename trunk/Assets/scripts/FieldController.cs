@@ -98,7 +98,7 @@ public class FieldController: MonoBehaviour
         }
 
         catch(System.FormatException s) { return -1; }
-        return -2;
+        //return -2;
     }
 
     public void GameSeedUpdate()
@@ -112,6 +112,7 @@ public class FieldController: MonoBehaviour
     public void ClearSolutions()
     {
         GF.Clasterize( );
+        GF.Slide( );
         DrawField( );
     }
 }
