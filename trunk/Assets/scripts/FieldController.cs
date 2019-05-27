@@ -1,54 +1,75 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using coinlines;
+using conilines.engine;
 using WSTools;
 using UnityEngine.UI;
 
 public class FieldController: MonoBehaviour
 {
+    //      Well, on a second thought, maybe pool is not required: items addede to a board
+    //  only when field created and sometime when new required. At most 1/s for a 2-3 sec at all.
+    //  private SpritePool Pool;
+    private List<KeyValuePair<int, Transform>> Tokens;
+    private List<Transform> Originals;
+    private GameField GF;
 
-    private List<SpritePool> Pool;
-    private int Pools = 5;
-    private gameField GF= TheGame.field;
     public GameObject FieldBase;
+
+    public TheGame Game;
     // Start is called before the first frame update
     void Start( )
     {
-        Pool = new List<SpritePool>( );
-        for(int i = 0; i < Pools; i++)
-            Pool.Add(new SpritePool(typeof(SpriteRenderer)));
-        Pool[0].Original = GameObject.Find("placeholder").GetComponent<SpriteRenderer>( );
-        Pool[1].Original = GameObject.Find("placececoin1").GetComponent<SpriteRenderer>( );
-        Pool[2].Original = GameObject.Find("placececoin2").GetComponent<SpriteRenderer>( );
-        Pool[3].Original = GameObject.Find("placececoin3").GetComponent<SpriteRenderer>( );
-        Pool[4].Original = GameObject.Find("placececoin4").GetComponent<SpriteRenderer>( );
+        Game = new TheGame( );
+        //Pool = new SpritePool( ); 
+        Tokens = new List<KeyValuePair<int, Transform>>( );
+        Originals = new List<Transform>( );
+        FillOriginals( );
 
-        for(int i = 0; i < Pools; i++) 
-        {
-            Pool[i].Original.gameObject.SetActive(false);
-            Pool[i].Init(GameObject.Find("Field/Pool"));
-            Pool[i].Empty( );
-        }
         FieldBase = GameObject.Find("Field");
 
-        GF = new gameField(8);
-        GF.SetFill(100);
+        GF = Game.Field;
+
+        PopulateTokens( );
         DrawField( );
+    }
+
+    private void PopulateTokens( )
+    {
+        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) { Destroy(d.Value.gameObject); });
+        Tokens.Clear( );
+
+        for(int x = 0; x < GF.SizeL; x++)
+            for(int y = 0; y < GF.SizeH; y++)
+            {
+                GameToken t = GF[x, y];
+                Transform Tk = Instantiate(Originals[t.Value]).transform;
+                Tk.position = ToSpaceCoordinates(x, y);
+                Tk.parent = FieldBase.transform;
+                Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
+            }
+    }
+
+    private void FillOriginals( )
+    {
+        Originals.Clear( );
+        for(int i = 0; i < 5; i++)
+        {
+            Transform t = GameObject.Find(string.Format("Token{0}", i)).transform;
+            Originals.Add(t);
+        }
     }
 
     private void DrawField( )
     {
-        for(int i = 0; i < Pools; i++)
-            Pool[i].Empty( );
-
+        Transform tmp;
         for(int i = 0; i < GF.SizeH; i++)
             for(int j = 0; j < GF.SizeL; j++)
             {
-                SpriteRenderer s = Pool[GF.Get(j, i)].GetObject( );
-                s.gameObject.transform.position = ToSpaceCoordinates(j, i);
-                s.gameObject.transform.SetParent(FieldBase.GetComponent<Transform>( ));
-                s.gameObject.name = string.Format("coin_{0}x{1}_{2}", j, i, GF.Get(j, i));
+                //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
+                int id = GF[j, i].ID;
+                tmp = Tokens.Find(x => x.Key == id).Value;
+                tmp.position = ToSpaceCoordinates(j, i);
             }
     }
 
@@ -64,26 +85,16 @@ public class FieldController: MonoBehaviour
 
     }
 
-
-    void CreateField( )
-    {
-        int x = 0;
-        int y = 0;
-        for(x = 0; x < TheGame.field.SizeL; x++)
-            for(y = 0; y < TheGame.field.SizeH; y++)
-            {
-
-            }
-    }
-
     void CreateFieldBySeed(int seed)
     {
         seed = Mathf.Abs(seed);
-        GF.SetFill(seed);
+        Game.CreateField(seed);
+        GF = Game.Field;
+        PopulateTokens( );
         DrawField( );
     }
 
-    private int GetSeedFromControl()
+    private int GetSeedFromControl( )
     {
         GameObject go = GameObject.Find("interface_debug/inp_seed/Text");
 
@@ -93,15 +104,15 @@ public class FieldController: MonoBehaviour
         Text If = go.GetComponent<Text>( );
         try
         {
-           int newseed = System.Convert.ToInt32(If.text);
+            int newseed = System.Convert.ToInt32(If.text);
             return newseed;
         }
 
-        catch(System.FormatException s) { return -1; }
+        catch(System.FormatException) { return -1; }
         //return -2;
     }
 
-    public void GameSeedUpdate()
+    public void GameSeedUpdate( )
     {
 
         int seed = GetSeedFromControl( );
@@ -109,10 +120,10 @@ public class FieldController: MonoBehaviour
             CreateFieldBySeed(seed);
     }
 
-    public void ClearSolutions()
+    public void ClearSolutions( )
     {
-        GF.Clasterize( );
-        GF.Slide( );
+        //        GF.Clasterize( );
+        //        GF.Slide( );
         DrawField( );
     }
 }

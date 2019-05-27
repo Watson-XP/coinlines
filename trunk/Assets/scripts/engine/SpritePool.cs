@@ -8,7 +8,7 @@ using ObjectPool;
 
 namespace WSTools
 {
-    public class SpritePool : ObjectPool<SpriteRenderer>
+    public class SpritePool : ObjectIdPool<SpriteRenderer>
     {
         private GameObject PoolParent;
         private SpriteRenderer original;
@@ -22,7 +22,7 @@ namespace WSTools
             }
         }
 
-        public SpritePool(Type T) : base(T)
+        public SpritePool(Type T) : base()
         {
         }
 
@@ -50,15 +50,5 @@ namespace WSTools
             return s;
         }
 
-        public new void Empty(bool destroy = false)
-        {
-            base.Empty(destroy);
-            foreach(SpriteRenderer s in Free)
-            {
-                s.gameObject.SetActive(false);
-                if (PoolParent != null)
-                    s.gameObject.transform.SetParent(PoolParent.transform);
-            }
-        }
     }
 }
