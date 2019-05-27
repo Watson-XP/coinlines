@@ -16,7 +16,7 @@ namespace coinlines
     {
         private static int id = 0;
 
-        static int GetID()
+        public static int GetID()
         {
             return id++;
         }
@@ -36,8 +36,49 @@ namespace coinlines
             this.value = value;
         }
 
-    }
+        public static bool operator >(FieldItem f, FieldItem g)
+        {
+            return f.value > g.value;
+        }
 
+
+        public static bool operator <(FieldItem f, FieldItem g)
+        {
+            return f.value < g.value;
+        }
+
+        public static bool operator >(FieldItem f, int g)
+        {
+            return f.value > g;
+        }
+
+        public static bool operator <(FieldItem f, int g)
+        {
+            return f.value < g;
+        }
+
+        public static bool operator ==(FieldItem f, int g)
+        {
+            return f.value == g;
+        }
+
+        public static bool operator !=(FieldItem f, int g)
+        {
+            return f.value != g;
+        }
+
+        public static bool operator ==(FieldItem f, FieldItem g)
+        {
+            return f.value == g.value;
+        }
+
+        public static bool operator !=(FieldItem f, FieldItem g)
+        {
+            return f.value != g.value;
+        }
+
+    }
+    
     public class gameField
     {
         private int fieldSizeL;
@@ -45,44 +86,56 @@ namespace coinlines
         public int SizeL => fieldSizeL;
         public int SizeH => fieldSizeH;
 
-        private List<List<int>> Clusters;
+        public Queue<int> Deleted;
+
 
         private int minSolution = 3; // minimum elements in line to be collected
 
-        private List<int> FieldData;
+        private List<FieldItem> FieldData;
+        private List<List<FieldItem>> Clusters;
         public Direction SlideDirection;
 
         public gameField(int sizeL, int sizeH = 0)
         {
             fieldSizeL = sizeL;
             fieldSizeH = ( sizeH == 0 ) ? sizeL : sizeH;
-            Clusters = new List<List<int>>( );
-            Init( );
+            Clusters = new List<List<FieldItem>>( );
+            Deleted = new Queue<int>( );
+            
+            Init( );           
         }
 
         private void Init( )
         {
-            FieldData = new List<int>(fieldSizeH * fieldSizeL);
+            FieldData = new List<FieldItem>(fieldSizeH * fieldSizeL);
             for(int i = 0; i < fieldSizeH * fieldSizeL; i++)
-                FieldData.Add(0);
+                FieldData.Add(new FieldItem(IDFactory.GetID(), 0));
             SlideDirection = Direction.Down;
+            Deleted.Clear( );
+            Clusters.Clear( );
         }
 
-        public int Get(int x, int y)
+        public FieldItem Get(int x, int y)
         {
             InRange(x, y);
-            return FieldData[x + y * fieldSizeL];
+            return FieldData[ToFlatXY(x,y)];
+        }
+
+        public void Set(int x, int y, FieldItem val)
+        {
+            InRange(x, y);            
+            FieldData[ToFlatXY(x, y)] = val;
         }
 
         public void Set(int x, int y, int val)
         {
             InRange(x, y);
-            FieldData[ToFlatXY(x, y)] = val;
+            FieldData[ToFlatXY(x, y)] = new FieldItem(IDFactory.GetID( ), val);
         }
 
         public void Swap(int x1, int y1, int x2, int y2)
         {
-            int tmp = Get(x1, y1);
+            FieldItem tmp = Get(x1, y1);
             Set(x1, y1, Get(x2, y2));
             Set(x2, y2, tmp);
         }
@@ -97,44 +150,6 @@ namespace coinlines
             if(( x < fieldSizeL ) && ( y < fieldSizeH ) && (x > -1 ) && (y>-1)) return true;
             if(onlycheck) return false;
             throw new IndexOutOfRangeException(string.Format("x={0}, y={1}, size={2} ", x, y, FieldData.Count));
-        }
-
-        public void FindRows( )
-        {
-            int x;
-            int y = -1;
-            int TmpVal;
-            int Total = 0;
-            while(++y < fieldSizeH)
-            {                
-                x = 0;
-                Total = 1;
-                TmpVal = Get(x, y);
-                while(++x < fieldSizeL)
-                {
-                    if(TmpVal == Get(x, y))
-                    {
-                        Total++;
-                    }
-                    else
-                    {
-                        if(Total >= minSolution)
-                        {
-                            while(--Total >= 0)
-                            {
-                                Set(x - Total - 1, y, 0);
-                            }
-                        }
-                        Total = 1;
-                        TmpVal = Get(x, y);
-                    }
-                }
-                if(Total >= minSolution)
-                    while(--Total >= 0)
-                    {
-                        Set(x - 1 - Total, y, 0);
-                    }
-            }
         }
 
         public void SetFill(int seed)
@@ -232,9 +247,12 @@ namespace coinlines
                     if(maxline >= minSolution)
                     {
                         foreach(int idx in Cluster)
-                            FieldData[idx] = 0;
+                        {
+                            //FieldData[idx] = FreeSpots.Dequeue( );
+                            Deleted.Enqueue(FieldData[idx].Id);                                
+                        }                        
                         //break;
-                        Clusters.Add(Cluster);
+                        //Clusters.Add(Cluster);
                     }
                 }
             }
