@@ -36,7 +36,13 @@ public class FieldController: MonoBehaviour
 
     private void PopulateTokens( )
     {
-        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) { Destroy(d.Value.gameObject); });
+        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) {
+            try
+            {
+                Destroy(d.Value.gameObject);
+            }
+            catch(System.Exception){ }
+        });
         Tokens.Clear( );
 
         for(int x = 0; x < GF.SizeL; x++)
@@ -46,6 +52,7 @@ public class FieldController: MonoBehaviour
                 Transform Tk = Instantiate(Originals[t.Value]).transform;
                 Tk.position = ToSpaceCoordinates(x, y);
                 Tk.parent = FieldBase.transform;
+                Tk.gameObject.name = string.Format("it_{0}",GF[x, y].ID);
                 Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
             }
     }
@@ -123,7 +130,8 @@ public class FieldController: MonoBehaviour
     public void ClearSolutions( )
     {
         //        GF.Clasterize( );
-        //        GF.Slide( );
+        GF.GetLines( );
+        PopulateTokens( );
         DrawField( );
     }
 }

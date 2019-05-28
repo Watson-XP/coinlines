@@ -63,7 +63,6 @@
     <Compile Include="Assets\scripts\engine\GameField.cs" />
     <Compile Include="Assets\scripts\engine\GameToken.cs" />
     <Compile Include="Assets\scripts\engine\IDFactory.cs" />
-    <Compile Include="Assets\scripts\engine\SpritePool.cs" />
     <Compile Include="Assets\scripts\engine\TheGame.cs" />
     <Compile Include="Assets\scripts\FieldController.cs" />
     <Reference Include="Unity.TextMeshPro.Editor">
