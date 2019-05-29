@@ -23,7 +23,6 @@ namespace conilines.engine
         {
             get { return Data[x, y]; }
         }
-
         private int sizeL;
         private int sizeH;
         
@@ -151,13 +150,56 @@ namespace conilines.engine
                     if(x >= minLine)
                     {
                         Cluster.ForEach(delegate (ItemData d) { Data[d.x, d.y] = new GameToken(0); });                        
-                        Everything.Clear( );
+                        //Everything.Clear( );
                     }                    
                 }
 
             }
 
             return ( Cluster.Count > 0 );
+        }
+
+        public void Slide()
+        {
+            int dx = 1;
+            int dy = 0;
+            bool reslide;
+            do
+            {
+                reslide = false;
+                for(int x = 0; x < SizeL; x++)
+                    for(int y = 0; y < sizeH; y++)
+                    {
+                        if(InRange(x + dx, y + dy))
+                            if(Data[x, y].Value != 0)
+                                if(Data[x + dx, y + dy].Value == 0)
+                            {
+                                Swap(x, y, x+dx, y+dy);
+                                reslide = true;
+                            }
+                    }
+            } while(reslide) ;
+        }
+
+        private void Swap(int x, int y, int dx, int dy)
+        {
+            GameToken tmp = Data[x, y];
+            Data[x, y] = Data[dx, dy];
+            Data[dx, dy] = tmp;
+        }
+
+        private bool InRange(int v1, int v2)
+        {
+            return ( v1 >= 0 ) && ( v1 < sizeL ) && ( v2 >= 0 ) && ( v2 < sizeH );
+        }
+
+        public bool HaveID(int id)
+        {
+            foreach(GameToken t in Data)
+            {
+                if(t.ID == id) return true;
+            }
+            return false;
         }
 
     }

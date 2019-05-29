@@ -39,21 +39,34 @@ public class FieldController: MonoBehaviour
         Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) {
             try
             {
-                Destroy(d.Value.gameObject);
+                if (!GF.HaveID(d.Key))
+                    Destroy(d.Value.gameObject);
             }
             catch(System.Exception){ }
         });
-        Tokens.Clear( );
+        //Tokens.Clear( );
 
         for(int x = 0; x < GF.SizeL; x++)
             for(int y = 0; y < GF.SizeH; y++)
             {
                 GameToken t = GF[x, y];
-                Transform Tk = Instantiate(Originals[t.Value]).transform;
-                Tk.position = ToSpaceCoordinates(x, y);
-                Tk.parent = FieldBase.transform;
-                Tk.gameObject.name = string.Format("it_{0}",GF[x, y].ID);
-                Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
+                Transform Tk;
+                if(Tokens.FindIndex(tk => tk.Key == t.ID) > -1)
+                {
+                     Tk = Tokens.Find(tk => tk.Key == t.ID).Value;
+                }
+                else
+                {
+                    Tk = Instantiate(Originals[t.Value]).transform;
+                    Tk.parent = FieldBase.transform;
+                    Tk.GetComponent<TokenController>( ).value = GF[x, y].Value;
+                    //Tk.position = ToSpaceCoordinates(x, y);
+                    //Tk.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(x, y));
+                    Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
+                    Tk.gameObject.name = string.Format("it_{0}", GF[x, y].ID);
+                }
+                //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));                
+                
             }
     }
 
@@ -76,7 +89,8 @@ public class FieldController: MonoBehaviour
                 //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
                 int id = GF[j, i].ID;
                 tmp = Tokens.Find(x => x.Key == id).Value;
-                tmp.position = ToSpaceCoordinates(j, i);
+                tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
+                //tmp.position = ToSpaceCoordinates(j, i);
             }
     }
 
@@ -98,6 +112,7 @@ public class FieldController: MonoBehaviour
         Game.CreateField(seed);
         GF = Game.Field;
         PopulateTokens( );
+
         DrawField( );
     }
 
@@ -131,6 +146,7 @@ public class FieldController: MonoBehaviour
     {
         //        GF.Clasterize( );
         GF.GetLines( );
+        GF.Slide( );
         PopulateTokens( );
         DrawField( );
     }
