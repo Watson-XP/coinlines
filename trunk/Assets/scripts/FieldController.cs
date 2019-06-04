@@ -147,6 +147,7 @@ public class FieldController: MonoBehaviour
         //        GF.Clasterize( );
         GF.GetLines( );
         GF.Slide( );
+        GF.Fill( true );
         PopulateTokens( );
         DrawField( );
     }

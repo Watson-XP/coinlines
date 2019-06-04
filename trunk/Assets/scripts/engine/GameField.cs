@@ -6,15 +6,6 @@ using System.Threading.Tasks;
 
 namespace conilines.engine
 {
-    internal struct ItemData
-    {
-        public int x;
-        public int y;
-        public bool check;
-        public GameToken Token;
-    }
-
-
     public class GameField
     {
         private readonly int minLine = 3;
@@ -25,10 +16,16 @@ namespace conilines.engine
         }
         private int sizeL;
         private int sizeH;
+        private Directions SlideDirection;
         
         private readonly int Seed;
         public int SizeL => sizeL;
         public int SizeH => sizeH;
+        Random rnd;
+
+        public int nextSeed { get {                
+                return rnd.Next(1, GameToken.maxIndex);
+            } }
 
         public GameField(int sizeL = 10, int sizeH = 10, int seed = 0)
         {
@@ -37,11 +34,12 @@ namespace conilines.engine
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
             InitField();
+            SlideDirection = Directions.Up;
         }
 
         private void InitField( )
         {
-            Random rnd = new Random(Seed);
+            rnd = new Random(Seed);
 
             for(int x = 0; x < sizeL; x++)
                 for(int y = 0; y < sizeH; y++)
@@ -161,8 +159,15 @@ namespace conilines.engine
 
         public void Slide()
         {
-            int dx = 1;
+            int dx = 0;
             int dy = 0;
+            switch(SlideDirection)
+            {
+                case Directions.Left: dx = -1; break;
+                case Directions.Right: dx = 1; break;
+                case Directions.Up: dy = -1; break;
+                case Directions.Down: dy = 1; break;
+            }
             bool reslide;
             do
             {
@@ -179,6 +184,26 @@ namespace conilines.engine
                             }
                     }
             } while(reslide) ;
+        }
+
+        public void Fill(bool nolines = false)
+        {
+            do
+            {
+                for(int x = 0; x < SizeL; x++)
+                    for(int y = 0; y < sizeH; y++)
+                    {
+                        if(InRange(x, y))
+                            if(Data[x, y].Value == 0)
+                            {
+                                //GameToken t = ;
+                                Data[x, y] = new GameToken(nextSeed);
+                            }
+
+                    }
+                if(nolines && GetLines( )) Slide( );
+
+            } while(nolines && GetLines( ));
         }
 
         private void Swap(int x, int y, int dx, int dy)
