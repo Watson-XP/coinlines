@@ -13,6 +13,8 @@ namespace conilines.engine
         public int ID => id;
         private readonly int value;
         internal static readonly int maxIndex = 5;
+        [NonSerialized]
+        FieldController FieldC;
 
         public int Value => value;
 
@@ -20,6 +22,7 @@ namespace conilines.engine
         {
             this.id = IDFactory.GetID();
             this.value = value;
+            
         }
 
         public static bool operator ==(GameToken a, GameToken b)

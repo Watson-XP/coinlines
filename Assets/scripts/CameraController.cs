@@ -5,8 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class CameraController : MonoBehaviour
-{
-    
+{    
 
     private void Update( )
     {   
@@ -17,7 +16,8 @@ public class CameraController : MonoBehaviour
 
             if(Physics.Raycast(ray, out hit, 100))
             {
-                
+                TokenController tk = hit.collider.gameObject.GetComponent<TokenController>( );
+                if(tk != null) tk.Clicked = true;
             }
         }
     }

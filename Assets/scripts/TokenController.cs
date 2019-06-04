@@ -9,6 +9,8 @@ public class TokenController : MonoBehaviour
     private readonly float speed = 6.2f;
     public int value;
 
+    public bool Clicked { get; internal set; }
+
     private void Awake( )
     {
         GamePosition = transform.position ;
