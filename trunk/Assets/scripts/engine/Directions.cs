@@ -1,4 +1,4 @@
 ﻿namespace conilines.engine
 {
-    internal enum Directions { Up, Down, Left, Right};
+    public enum Directions { Up, Down, Left, Right};
 }

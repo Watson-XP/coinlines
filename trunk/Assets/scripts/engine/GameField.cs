@@ -16,8 +16,8 @@ namespace conilines.engine
         }
         private int sizeL;
         private int sizeH;
-        private Directions SlideDirection;
-        
+        public Directions SlideDirection { get; private set; }
+
         private readonly int Seed;
         public int SizeL => sizeL;
         public int SizeH => sizeH;
@@ -34,7 +34,7 @@ namespace conilines.engine
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
             InitField();
-            SlideDirection = Directions.Up;
+            SlideDirection = Directions.Left;
         }
 
         private void InitField( )
@@ -78,7 +78,8 @@ namespace conilines.engine
                     if(Data[x, y].Value > 0)
                         Everything.Add( new ItemData( ) { x = x, y = y, check = false, Token = Data[x, y] });
 
-            while(Everything.Count() > 0)
+            bool ClusterFound = false;
+            while (Everything.Count() > 0)
             {
                 Candidate.Clear( );
                 Cluster.Clear( );
@@ -147,14 +148,15 @@ namespace conilines.engine
                     }
                     if(x >= minLine)
                     {
-                        Cluster.ForEach(delegate (ItemData d) { Data[d.x, d.y] = new GameToken(0); });                        
+                        Cluster.ForEach(delegate (ItemData d) { Data[d.x, d.y] = new GameToken(0); });
                         //Everything.Clear( );
+                        ClusterFound = true;
                     }                    
                 }
 
             }
 
-            return ( Cluster.Count > 0 );
+            return ClusterFound;// ( Cluster.Count >= minLine);
         }
 
         public void Slide()
@@ -190,7 +192,8 @@ namespace conilines.engine
         {
             do
             {
-                for(int x = 0; x < SizeL; x++)
+                if (nolines) Slide(); 
+                for (int x = 0; x < SizeL; x++)
                     for(int y = 0; y < sizeH; y++)
                     {
                         if(InRange(x, y))
@@ -200,8 +203,7 @@ namespace conilines.engine
                                 Data[x, y] = new GameToken(nextSeed);
                             }
 
-                    }
-                if(nolines && GetLines( )) Slide( );
+                    }                
 
             } while(nolines && GetLines( ));
         }
