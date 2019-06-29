@@ -127,7 +127,7 @@ PrefabInstance:
     - target: {fileID: 1570259841606999674, guid: ea344ff50d9a9824c9cb603c2650fa29,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1570259841606999675, guid: ea344ff50d9a9824c9cb603c2650fa29,
         type: 3}
@@ -510,7 +510,7 @@ PrefabInstance:
     - target: {fileID: 1570259841606999674, guid: 3bcb9b04d7f7da44dba58cabc1e3abc2,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1570259841606999675, guid: 3bcb9b04d7f7da44dba58cabc1e3abc2,
         type: 3}
@@ -743,6 +743,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1206115202}
   - component: {fileID: 1206115203}
+  - component: {fileID: 1206115204}
   m_Layer: 0
   m_Name: Field
   m_TagString: Untagged
@@ -779,6 +780,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FieldBase: {fileID: 0}
+--- !u!114 &1206115204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206115201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4d16087b47ecbc4c9e52303ee4782fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1217489008
 GameObject:
   m_ObjectHideFlags: 0
@@ -1347,7 +1360,7 @@ PrefabInstance:
     - target: {fileID: 1570259841606999674, guid: 016452d57bee8944eb0354c544211341,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1570259841606999675, guid: 016452d57bee8944eb0354c544211341,
         type: 3}
@@ -1568,7 +1581,7 @@ PrefabInstance:
     - target: {fileID: 1406513407817504864, guid: 060e95573bf79884f8e7f61769f2f42b,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1406513407817504865, guid: 060e95573bf79884f8e7f61769f2f42b,
         type: 3}
@@ -1648,7 +1661,7 @@ PrefabInstance:
     - target: {fileID: 1570259841606999674, guid: b8ce650b46b5cf447a23e423647e1103,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1570259841606999675, guid: b8ce650b46b5cf447a23e423647e1103,
         type: 3}

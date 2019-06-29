@@ -5,7 +5,7 @@ using conilines.engine;
 using conilines.unity;
 using WSTools;
 using UnityEngine.UI;
-enum FieldStates { Ready, Slide }
+public enum FieldStates { Ready, Slide }
 public class FieldController: MonoBehaviour
 {
     //      Well, on a second thought, maybe pool is not required: items addede to a board
@@ -14,30 +14,36 @@ public class FieldController: MonoBehaviour
     private List<KeyValuePair<int, Transform>> Tokens;
     private List<Transform> Originals;
     private GameField GF;
-    private FieldStates State;
+    public  FieldStates State;
 
     public GameObject FieldBase;
 
     public TheGame Game;
+    public List<TokenController> NewTokens;
+
+    private void Awake()
+    {
+        Game = Director.Game;
+        Director.Field = this;
+    }
+
     // Start is called before the first frame update
     void Start( )
     {
-        Game = Director.Game;
+
         //Pool = new SpritePool( ); 
         Tokens = new List<KeyValuePair<int, Transform>>( );
         Originals = new List<Transform>( );
         FillOriginals( );
 
-        FieldBase = GameObject.Find("Field");
+        FieldBase = GameObject.Find("Field/Pool");
 
         GF = Game.Field;
-
-        PopulateTokens( );
-        DrawField( );
+        
         State = FieldStates.Ready;
     }
 
-    private void PopulateTokens( )
+    public void PopulateTokens( )
     {
         Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) {
             try
@@ -50,8 +56,9 @@ public class FieldController: MonoBehaviour
             catch(System.Exception){ }
         });
         //Tokens.Clear( );
+        NewTokens = new List<TokenController>();
 
-        for(int x = 0; x < GF.SizeL; x++)
+        for (int x = 0; x < GF.SizeL; x++)
             for(int y = 0; y < GF.SizeH; y++)
             {
                 GameToken t = GF[x, y];
@@ -60,6 +67,8 @@ public class FieldController: MonoBehaviour
                 {
                      Tk = Tokens.Find(tk => tk.Key == t.ID).Value;
                     Tk.GetComponent<TokenController>().updateValue();
+                    Tk.gameObject.name = string.Format("!it_{0}[{1},{2}]", GF[x, y].ID, x, y);
+                    Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
                 }
                 else
                 {
@@ -67,10 +76,12 @@ public class FieldController: MonoBehaviour
                     Tk.parent = FieldBase.transform;
                     Tk.GetComponent<TokenController>( ).Associate(GF[x, y]);                    
                     
-                    //Tk.position = ToSpaceCoordinates(x, y);
-                    //Tk.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(x, y));
+                    Tk.position = ToSpaceCoordinates(x, GF.SizeH+1);
+                    Tk.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(x, y));
+                    NewTokens.Add(Tk.GetComponent<TokenController>());
+
                     Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
-                    Tk.gameObject.name = string.Format("it_{0}", GF[x, y].ID);
+                    Tk.gameObject.name = string.Format("it_{0}[{1},{2}]", GF[x, y].ID,x,y);
 
                 }
                 //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));                
@@ -88,7 +99,7 @@ public class FieldController: MonoBehaviour
         }
     }
 
-    private void DrawField( )
+    public void DrawField( )
     {
         Transform tmp;
         for(int i = 0; i < GF.SizeH; i++)
@@ -102,7 +113,7 @@ public class FieldController: MonoBehaviour
             }
     }
 
-    private Vector3 ToSpaceCoordinates(int x, int y)
+    public Vector3 ToSpaceCoordinates(int x, int y)
     {
         int size = 1;
         return new Vector3(x * size - 8, 4 - y * size, 0);
@@ -119,27 +130,6 @@ public class FieldController: MonoBehaviour
             State = FieldStates.Ready;
             return;
         }
-
-        if (State == FieldStates.Ready)
-        {
-            TokenController tk = ClickHandle();
-            if (tk != null)
-            {                
-                tk.updateValue();
-                State = FieldStates.Slide;
-            }
-        }
-
-    }
-
-    void CreateFieldBySeed(int seed)
-    {
-        seed = Mathf.Abs(seed);
-        Game.CreateField(seed);
-        GF = Game.Field;
-        PopulateTokens( );
-
-        DrawField( );
     }
 
     private int GetSeedFromControl( )
@@ -160,14 +150,6 @@ public class FieldController: MonoBehaviour
         //return -2;
     }
 
-    public void GameSeedUpdate( )
-    {
-
-        int seed = GetSeedFromControl( );
-        if(seed >= 0)
-            CreateFieldBySeed(seed);
-    }
-
     public void ClearSolutions( )
     {
         //        GF.Clasterize( );
@@ -178,7 +160,7 @@ public class FieldController: MonoBehaviour
         DrawField( );
     }
 
-    private TokenController ClickHandle()
+    public TokenController ClickHandle()
     {
         if (Input.GetMouseButtonDown(0))
         {
