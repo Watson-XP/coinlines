@@ -35,6 +35,7 @@ namespace conilines.engine
             GameField gf = new GameField(seed: seed);
             Fields.Add(gf);
             currentfield = Fields.Count - 1;
+            ///gf.Fill(true);
         }
     }
 }

@@ -3,118 +3,81 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using conilines.engine;
+using System;
 
-public class TokenController: MonoBehaviour
+public class TokenController : MonoBehaviour
 {
     public Vector3 GamePosition;
-    private readonly float speed = 2.2f;
-    public int value { get { return Owner.Value; } }
-    public int ID { get { return Owner.ID; } }
-    FieldController parent;
-    public GameToken Owner;
+    private readonly float speed = 6.2f;
+    public GameToken item { get; private set; }
+    public bool InMotion { get; private set; }
 
-    public bool Paused;
-    public TokenController Follower;
-    public Vector3 FollowStartPosition;
+    public int value => (item is null) ? 0 : item.Value;
+    private bool die;
 
-    public static bool operator ==(TokenController a, TokenController b)
+    public bool Clicked { get; internal set; }
+
+    private void Awake()
     {
-        if (object.ReferenceEquals(a, null))
-        {
-            return object.ReferenceEquals(b, null);
-        }
-
-        return a.Equals(b);
-    }
-
-    public static bool operator !=(TokenController a, TokenController b) => !(a == b);
-    private float ItemSize => GetComponent<BoxCollider>().size.x;
-
-    public bool Clicked
-    {
-        get { return false; }
-        set
-        {
-            if(value == true)
-                if(parent != null)
-                {
-                    parent.Selected = this;
-                }
-        }
-    }
-
-    private void Awake( )
-    {
-        gameObject.SetActive(true);
-        if (parent != null)
-        {
-            if (parent.Selected == this)
-                if (Input.GetMouseButtonDown(0))
-                {
-                    //ToSpaceCoordinates
-                }
-        }
-        else
-        {
-            GamePosition = transform.position;
-            try
-            {
-                parent = GameObject.Find("Field").GetComponent<FieldController>();
-            }
-            catch (System.Exception) { Debug.Log("Field object not found"); }            
-        }
-        Follower = null;
-        FollowStartPosition = Vector3.zero;
-        Paused = false;
+        GamePosition = transform.position;
+        die = false;
     }
     // Start is called before the first frame update
-    void Start( )
+    void Start()
     {
 
     }
 
     // Update is called once per frame
-    void Update( )
+    void Update()
     {
-        if (Paused) return;
-
-        if(transform.position != GamePosition)
+        if (transform.position != GamePosition)
         {
             if (value == 0)
             {
-                //GamePosition += new Vector3(0, 0, 0.2f); ;
+                GamePosition += new Vector3(0, 0, 0.2f); ;
                 transform.position = GamePosition;
             }
             else
             {
-//                if ((transform.position - GamePosition).magnitude > ItemSize )
-//                    transform.position += ((GamePosition - transform.position).normalized);
-//                else
-                    transform.position = Vector3.Lerp(transform.position, GamePosition, Time.deltaTime * speed);
-                if (Follower != null)
+                if (die && (transform.position - GamePosition).magnitude < 0.4f)
                 {
-                    if ((transform.position.x - FollowStartPosition.x) < -0.5f)
-                    {
-                        Follower.Paused = false;
-                        Follower.gameObject.SetActive(true);
-                        Follower = null;
-                        FollowStartPosition = Vector3.zero;                        
-                    }
+                    transform.position = GamePosition;                    
                 }
-            }
+                else
+                    transform.position = Vector3.Lerp(transform.position, GamePosition, Time.deltaTime * speed);
+
+            }            
+        }
+        if (die && (transform.position == GamePosition))
+        {
+            Destroy(this.gameObject);
+        }
+        InMotion = transform.position == GamePosition;
+    }
+
+    public void Associate(GameToken gt)
+    {
+        item = gt;
+    }
+
+    public void updateValue()
+    {        
+        Transform t = GameObject.Find(string.Format("Token{0}", item.Value)).transform;
+        Sprite sp = t.GetComponent<SpriteRenderer>().sprite;
+        if (this.GetComponent<SpriteRenderer>().sprite.name != sp.name)
+        {
+            this.GetComponent<SpriteRenderer>().sprite = sp;
         }
     }
 
-    public void SetPosition(Vector3 newpos)
+    internal void SetPosition(Vector3 vector3)
     {
-        GamePosition = newpos;
+        GamePosition = vector3;
     }
 
-    public override bool Equals(object obj)
-    {     
-        if (obj == null) return false;
-        if (obj.GetType() != typeof(TokenController)) return false;
-        TokenController tok = (TokenController)obj;
-        return (this.ID == tok.ID);
+    public void DoDestroy()
+    {
+        die = true;
     }
 }
