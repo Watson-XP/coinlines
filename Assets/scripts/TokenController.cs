@@ -10,17 +10,20 @@ public class TokenController : MonoBehaviour
     public Vector3 GamePosition;
     private readonly float speed = 6.2f;
     public GameToken item { get; private set; }
-    public bool InMotion { get; private set; }
+    public bool InMotion { get {
+            return (transform.position - GamePosition).magnitude > 0.5f;
+        } }
 
     public int value => (item is null) ? 0 : item.Value;
     private bool die;
-
+    public bool Created;// { get; internal set; }
     public bool Clicked { get; internal set; }
 
     private void Awake()
     {
         GamePosition = transform.position;
         die = false;
+        Created = true;
     }
     // Start is called before the first frame update
     void Start()
@@ -31,6 +34,7 @@ public class TokenController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Created) return;
         if (transform.position != GamePosition)
         {
             if (value == 0)
@@ -53,7 +57,7 @@ public class TokenController : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
-        InMotion = transform.position == GamePosition;
+///        InMotion = transform.position == GamePosition;
     }
 
     public void Associate(GameToken gt)
@@ -69,6 +73,7 @@ public class TokenController : MonoBehaviour
         {
             this.GetComponent<SpriteRenderer>().sprite = sp;
         }
+        
     }
 
     internal void SetPosition(Vector3 vector3)
