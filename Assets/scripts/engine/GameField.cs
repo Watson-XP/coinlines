@@ -16,16 +16,20 @@ namespace conilines.engine
         }
         private int sizeL;
         private int sizeH;
-        public Directions SlideDirection { get; private set; }
+        private Directions SlideDirection;
 
         private readonly int Seed;
         public int SizeL => sizeL;
         public int SizeH => sizeH;
         Random rnd;
 
-        public int nextSeed { get {                
+        public int nextSeed
+        {
+            get
+            {
                 return rnd.Next(1, GameToken.maxIndex);
-            } }
+            }
+        }
 
         public GameField(int sizeL = 10, int sizeH = 10, int seed = 0)
         {
@@ -34,15 +38,15 @@ namespace conilines.engine
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
             InitField();
-            SlideDirection = Directions.Left;
+            SlideDirection = Directions.Up;
         }
 
-        private void InitField( )
+        private void InitField()
         {
             rnd = new Random(Seed);
 
-            for(int x = 0; x < sizeL; x++)
-                for(int y = 0; y < sizeH; y++)
+            for (int x = 0; x < sizeL; x++)
+                for (int y = 0; y < sizeH; y++)
                     Data[x, y] = new GameToken(rnd.Next(1, GameToken.maxIndex));
         }
 
@@ -51,119 +55,119 @@ namespace conilines.engine
             return base.Equals(obj);
         }
 
-        public override int GetHashCode( )
+        public override int GetHashCode()
         {
-            return base.GetHashCode( );
+            return base.GetHashCode();
         }
 
-        public override string ToString( )
+        public override string ToString()
         {
             return string.Format("Array:{0}x{1}", sizeL, sizeH);
         }
         private static int CompareBySum(ItemData x, ItemData y)
         {
-            int diff = ( x.x + x.y - y.x - y.y );
+            int diff = (x.x + x.y - y.x - y.y);
             return Math.Sign(diff);
         }
 
-        public bool GetLines( )
+        public bool GetLines()
         {
-            List<ItemData> Cluster = new List<ItemData>( );
-            Queue<ItemData> Candidate = new Queue<ItemData>( );
-            List<ItemData> Everything = new List<ItemData>( );            
+            List<ItemData> Cluster = new List<ItemData>();
+            Queue<ItemData> Candidate = new Queue<ItemData>();
+            List<ItemData> Everything = new List<ItemData>();
             int idx;
+            bool linefound = false;
 
-            for(int x = 0; x < sizeL; x++)
-                for(int y = 0; y < sizeH; y++)
-                    if(Data[x, y].Value > 0)
-                        Everything.Add( new ItemData( ) { x = x, y = y, check = false, Token = Data[x, y] });
+            for (int x = 0; x < sizeL; x++)
+                for (int y = 0; y < sizeH; y++)
+                    if (Data[x, y].Value > 0)
+                        Everything.Add(new ItemData() { x = x, y = y, check = false, Token = Data[x, y] });
 
-            bool ClusterFound = false;
             while (Everything.Count() > 0)
             {
-                Candidate.Clear( );
-                Cluster.Clear( );
+                Candidate.Clear();
+                Cluster.Clear();
                 Candidate.Enqueue(Everything[0]);
                 Everything.RemoveAt(0);
                 do
                 {
-                    ItemData tmp = Candidate.Dequeue( );                    
-                    if(tmp.x > 0)
-                    if (Data[tmp.x-1, tmp.y].Value == tmp.Token.Value)
-                    {
-                        idx =  Everything.FindIndex(t => ( ( t.x == tmp.x - 1 ) &&(t.y == tmp.y)));
-                        if(idx > -1)
+                    ItemData tmp = Candidate.Dequeue();
+                    if (tmp.x > 0)
+                        if (Data[tmp.x - 1, tmp.y].Value == tmp.Token.Value)
                         {
-                            Candidate.Enqueue(Everything[idx]);
-                            Everything.RemoveAt(idx);
-                            tmp.check = true;
+                            idx = Everything.FindIndex(t => ((t.x == tmp.x - 1) && (t.y == tmp.y)));
+                            if (idx > -1)
+                            {
+                                Candidate.Enqueue(Everything[idx]);
+                                Everything.RemoveAt(idx);
+                                tmp.check = true;
+                            }
                         }
-                    }
-                    if(tmp.x < sizeL-1)
-                        if(Data[tmp.x + 1, tmp.y].Value == tmp.Token.Value)
-                    {
-                        idx = Everything.FindIndex(t => ( ( t.x == tmp.x + 1 ) && ( t.y == tmp.y ) ));
-                        if(idx > -1)
-                        {                            
-                            Candidate.Enqueue(Everything[idx]);
-                            Everything.RemoveAt(idx);
-                            tmp.check = true;
-                        }
-                    }
-                    if (tmp.y < sizeH-1)
-                    if(Data[tmp.x , tmp.y+1].Value == tmp.Token.Value)
-                    {
-                        idx = Everything.FindIndex(t => ( ( t.x == tmp.x  ) && ( t.y == tmp.y+1 ) ));
-                        if(idx > -1)
+                    if (tmp.x < sizeL - 1)
+                        if (Data[tmp.x + 1, tmp.y].Value == tmp.Token.Value)
                         {
+                            idx = Everything.FindIndex(t => ((t.x == tmp.x + 1) && (t.y == tmp.y)));
+                            if (idx > -1)
+                            {
+                                Candidate.Enqueue(Everything[idx]);
+                                Everything.RemoveAt(idx);
+                                tmp.check = true;
+                            }
+                        }
+                    if (tmp.y < sizeH - 1)
+                        if (Data[tmp.x, tmp.y + 1].Value == tmp.Token.Value)
+                        {
+                            idx = Everything.FindIndex(t => ((t.x == tmp.x) && (t.y == tmp.y + 1)));
+                            if (idx > -1)
+                            {
 
-                            Candidate.Enqueue(Everything[idx]);
-                            Everything.RemoveAt(idx);
-                            tmp.check = true;
+                                Candidate.Enqueue(Everything[idx]);
+                                Everything.RemoveAt(idx);
+                                tmp.check = true;
+                            }
                         }
-                    }
-                    if ( tmp.y > 0)
-                    if(Data[tmp.x , tmp.y-1].Value == tmp.Token.Value)
-                    {
-                        idx = Everything.FindIndex(t => ( ( t.x == tmp.x ) && ( t.y == tmp.y-1 ) ));
-                        if(idx > -1)
+                    if (tmp.y > 0)
+                        if (Data[tmp.x, tmp.y - 1].Value == tmp.Token.Value)
                         {
-                            Candidate.Enqueue(Everything[idx]);
-                            Everything.RemoveAt(idx);
-                            tmp.check = true;
+                            idx = Everything.FindIndex(t => ((t.x == tmp.x) && (t.y == tmp.y - 1)));
+                            if (idx > -1)
+                            {
+                                Candidate.Enqueue(Everything[idx]);
+                                Everything.RemoveAt(idx);
+                                tmp.check = true;
+                            }
                         }
-                    }                    
                     Cluster.Add(tmp);
-                } while(Candidate.Count > 0);
+                } while (Candidate.Count > 0);
 
                 if (Cluster.Count >= minLine)
                 {
                     Cluster.Sort(CompareBySum);
                     int x = 1;
-                    while(Cluster.FindIndex(t => t.x == Cluster[0].x + x && t.Token.Value == Cluster[0].Token.Value) > -1) x++;
+                    while (Cluster.FindIndex(t => t.x == Cluster[0].x + x && t.Token.Value == Cluster[0].Token.Value) > -1) x++;
                     if (x < minLine)
                     {
                         x = 1;
-                        while(Cluster.FindIndex(t => t.y == Cluster[0].y + x && t.Token.Value == Cluster[0].Token.Value) > -1) x++;
+                        while (Cluster.FindIndex(t => t.y == Cluster[0].y + x && t.Token.Value == Cluster[0].Token.Value) > -1) x++;
                     }
-                    if(x >= minLine)
+                    if (x >= minLine)
                     {
                         Cluster.ForEach(delegate (ItemData d) { Data[d.x, d.y] = new GameToken(0); });
                         //Everything.Clear( );
-                        ClusterFound = true;
-                    }                    
+                        linefound = true;
+                    }
                 }
 
             }
 
-            return ClusterFound;// ( Cluster.Count >= minLine);
+            return linefound;// (Cluster.Count >= minLine);
         }
 
-        public void Slide()
+        public bool Slide()
         {
             int dx = 0;
             int dy = 0;
-            switch(SlideDirection)
+            switch (SlideDirection)
             {
                 case Directions.Left: dx = -1; break;
                 case Directions.Right: dx = 1; break;
@@ -171,41 +175,49 @@ namespace conilines.engine
                 case Directions.Down: dy = 1; break;
             }
             bool reslide;
+            bool result = false;
             do
             {
                 reslide = false;
-                for(int x = 0; x < SizeL; x++)
-                    for(int y = 0; y < sizeH; y++)
+                for (int x = 0; x < SizeL; x++)
+                    for (int y = 0; y < sizeH; y++)
                     {
-                        if(InRange(x + dx, y + dy))
-                            if(Data[x, y].Value != 0)
-                                if(Data[x + dx, y + dy].Value == 0)
-                            {
-                                Swap(x, y, x+dx, y+dy);
-                                reslide = true;
-                            }
+                        if (InRange(x + dx, y + dy))
+                            if (Data[x, y].Value != 0)
+                                if (Data[x + dx, y + dy].Value == 0)
+                                {
+                                    Swap(x, y, x + dx, y + dy);
+                                    reslide = true;
+                                    result = true;
+                                }
                     }
-            } while(reslide) ;
+            } while (reslide);
+            return result;
         }
+
 
         public void Fill(bool nolines = false)
         {
+            bool loop = false;
             do
             {
-                if (nolines) Slide(); 
+                loop = false;
                 for (int x = 0; x < SizeL; x++)
-                    for(int y = 0; y < sizeH; y++)
+                    for (int y = 0; y < sizeH; y++)
                     {
-                        if(InRange(x, y))
-                            if(Data[x, y].Value == 0)
+                        if (InRange(x, y))
+                            if (Data[x, y].Value == 0)
                             {
                                 //GameToken t = ;
                                 Data[x, y] = new GameToken(nextSeed);
                             }
+                    }
+                if (nolines)
+                    loop = GetLines();
+                if (loop) Slide();
+                while (nolines && GetLines()) Slide();
 
-                    }                
-
-            } while(nolines && GetLines( ));
+            } while (loop);
         }
 
         private void Swap(int x, int y, int dx, int dy)
@@ -217,14 +229,14 @@ namespace conilines.engine
 
         private bool InRange(int v1, int v2)
         {
-            return ( v1 >= 0 ) && ( v1 < sizeL ) && ( v2 >= 0 ) && ( v2 < sizeH );
+            return (v1 >= 0) && (v1 < sizeL) && (v2 >= 0) && (v2 < sizeH);
         }
 
         public bool HaveID(int id)
         {
-            foreach(GameToken t in Data)
+            foreach (GameToken t in Data)
             {
-                if(t.ID == id) return true;
+                if (t.ID == id) return true;
             }
             return false;
         }
