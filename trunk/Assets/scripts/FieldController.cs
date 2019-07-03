@@ -45,27 +45,22 @@ public class FieldController: MonoBehaviour
 
     public void PopulateTokens( )
     {
-        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d) {
-            try
-            {
-                if (!GF.HaveID(d.Key))
-                {
-                    d.Value.GetComponent<TokenController>().DoDestroy();
-                }
-            }
-            catch(System.Exception){ }
-        });
-        //Tokens.Clear( );
+        ClearDestroyedTokens();
+        AddNewTokens();
+    }
+
+    public void AddNewTokens() // Add tokens created on field
+    {
         NewTokens = new List<TokenController>();
 
         for (int x = 0; x < GF.SizeL; x++)
-            for(int y = 0; y < GF.SizeH; y++)
+            for (int y = 0; y < GF.SizeH; y++)
             {
                 GameToken t = GF[x, y];
                 Transform Tk;
-                if(Tokens.FindIndex(tk => tk.Key == t.ID) > -1)
+                if (Tokens.FindIndex(tk => tk.Key == t.ID) > -1)
                 {
-                     Tk = Tokens.Find(tk => tk.Key == t.ID).Value;
+                    Tk = Tokens.Find(tk => tk.Key == t.ID).Value;
                     Tk.GetComponent<TokenController>().updateValue();
                     Tk.gameObject.name = string.Format("!it_{0}[{1},{2}]", GF[x, y].ID, x, y);
                     Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
@@ -74,22 +69,37 @@ public class FieldController: MonoBehaviour
                 {
                     Tk = Instantiate(Originals[t.Value]).transform;
                     Tk.parent = FieldBase.transform;
-                    Tk.GetComponent<TokenController>( ).Associate(GF[x, y]);                    
-                    
-                    Tk.position = ToSpaceCoordinates(x, GF.SizeH+1);
-                    Tk.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(x, y));
+                    Tk.GetComponent<TokenController>().Associate(GF[x, y]);
+
+                    Tk.position = ToSpaceCoordinates(x, GF.SizeH + 1);
+                    Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
                     NewTokens.Add(Tk.GetComponent<TokenController>());
 
                     Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
-                    Tk.gameObject.name = string.Format("it_{0}[{1},{2}]", GF[x, y].ID,x,y);
+                    Tk.gameObject.name = string.Format("it_{0}[{1},{2}]", GF[x, y].ID, x, y);
 
                 }
                 //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));                
-                
+
             }
     }
 
-    private void FillOriginals( )
+    public void ClearDestroyedTokens() // Send kill command to Tokens removed from field 
+    {
+        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d)
+        {
+            try
+            {
+                if (!GF.HaveID(d.Key))
+                {
+                    d.Value.GetComponent<TokenController>().DoDestroy();
+                }
+            }
+            catch (System.Exception) { }
+        });
+    }
+
+    private void FillOriginals( ) //init arrray of token prefabs
     {
         Originals.Clear( );
         for(int i = 0; i < 5; i++)
@@ -99,7 +109,7 @@ public class FieldController: MonoBehaviour
         }
     }
 
-    public void DrawField( )
+    public void DrawField( )// Place all known tokens to their respective places
     {
         Transform tmp;
         for(int i = 0; i < GF.SizeH; i++)
@@ -108,8 +118,12 @@ public class FieldController: MonoBehaviour
                 //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
                 int id = GF[j, i].ID;
                 tmp = Tokens.Find(x => x.Key == id).Value;
-                tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
-                //tmp.position = ToSpaceCoordinates(j, i);
+                if (!(tmp is null))
+                {
+                    //tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
+                    tmp.position = ToSpaceCoordinates(j, i);
+                    tmp.GetComponent<TokenController>().Created = false;
+                }
             }
     }
 

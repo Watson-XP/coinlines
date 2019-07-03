@@ -38,6 +38,7 @@ namespace conilines.engine
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
             InitField();
+            Fill(true);
             SlideDirection = Directions.Up;
         }
 
@@ -83,7 +84,7 @@ namespace conilines.engine
                     if (Data[x, y].Value > 0)
                         Everything.Add(new ItemData() { x = x, y = y, check = false, Token = Data[x, y] });
 
-            while (Everything.Count() > 0)
+            while (Everything.Count() > 0 && !linefound)
             {
                 Candidate.Clear();
                 Cluster.Clear();
