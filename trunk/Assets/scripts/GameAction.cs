@@ -21,5 +21,18 @@ namespace conilines.unity
             this.name = name;
             p1 = null;
         }
+
+        public static GameAction Slide
+        {
+            get { return new GameAction("SlideField"); }
+        }
+    }
+
+    class GASlide : GameAction
+    {
+        public GASlide() : base("SlideField")
+        {
+            
+        }
     }
 }

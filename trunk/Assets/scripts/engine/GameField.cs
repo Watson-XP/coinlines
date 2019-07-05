@@ -16,7 +16,7 @@ namespace conilines.engine
         }
         private int sizeL;
         private int sizeH;
-        private Directions SlideDirection;
+        public Directions SlideDirection { get; private set; }
 
         private readonly int Seed;
         public int SizeL => sizeL;
@@ -195,7 +195,6 @@ namespace conilines.engine
             } while (reslide);
             return result;
         }
-
 
         public void Fill(bool nolines = false)
         {
