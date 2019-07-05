@@ -5,8 +5,12 @@ using conilines.engine;
 using conilines.unity;
 using WSTools;
 using UnityEngine.UI;
-public enum FieldStates { Ready, Slide }
-public class FieldController: MonoBehaviour
+public enum FieldStates
+{
+    Ready, Slide,
+    Removing
+}
+public class FieldController : MonoBehaviour
 {
     //      Well, on a second thought, maybe pool is not required: items addede to a board
     //  only when field created and sometime when new required. At most 1/s for a 2-3 sec at all.
@@ -14,8 +18,8 @@ public class FieldController: MonoBehaviour
     private List<KeyValuePair<int, Transform>> Tokens;
     private List<Transform> Originals;
     private GameField GF;
-    public  FieldStates State;
-
+    public FieldStates State;
+    private bool autofill;
     public GameObject FieldBase;
 
     public TheGame Game;
@@ -24,26 +28,82 @@ public class FieldController: MonoBehaviour
     private void Awake()
     {
         Game = Director.Game;
-        Director.Field = this;
+        if (FieldBase == null)
+        {
+            Director.Field = this;
+            autofill = false;
+        }
+        else
+            autofill = true;
     }
 
     // Start is called before the first frame update
-    void Start( )
+    void Start()
     {
 
         //Pool = new SpritePool( ); 
-        Tokens = new List<KeyValuePair<int, Transform>>( );
-        Originals = new List<Transform>( );
-        FillOriginals( );
+        Tokens = new List<KeyValuePair<int, Transform>>();
+        Originals = new List<Transform>();
+        FillOriginals();
 
-        FieldBase = GameObject.Find("Field/Pool");
+        if (FieldBase == null)
+            FieldBase = GameObject.Find("Field/Pool");
 
         GF = Game.Field;
-        
         State = FieldStates.Ready;
     }
 
-    public void PopulateTokens( )
+    // Update is called once per frame
+    void Update()
+    {
+        if (autofill)  // nonmanageable mode always show 'map' :)
+        {
+            ClearDestroyedTokens();
+            AddNewTokens();
+            DrawField();
+            return;
+        }
+
+        switch (State)
+        {
+            case FieldStates.Removing:
+                if (Tokens.FindIndex(tk => tk.Value.GetComponent<TokenController>().perish) == -1)
+                    State = FieldStates.Ready;
+                break;
+        }
+
+    }
+
+    private void FillOriginals() //init arrray of token prefabs
+    {
+        Originals.Clear();
+        for (int i = 0; i < 5; i++)
+        {
+            Transform t = GameObject.Find(string.Format("Token{0}", i)).transform;
+            Originals.Add(t);
+        }
+    }
+
+    public void DrawField()// Place all known tokens to their respective places
+    {
+        Transform tmp;
+        for (int i = 0; i < GF.SizeH; i++)
+            for (int j = 0; j < GF.SizeL; j++)
+            {
+                //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
+                int id = GF[j, i].ID;
+                tmp = Tokens.Find(x => x.Key == id).Value;
+                if (!(tmp is null))
+                {
+                    //tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
+                    tmp.localPosition = ToSpaceCoordinates(j, i);
+                    tmp.GetComponent<TokenController>().Created = false;
+                }
+            }
+    }
+
+
+    public void PopulateTokens()
     {
         ClearDestroyedTokens();
         AddNewTokens();
@@ -71,7 +131,7 @@ public class FieldController: MonoBehaviour
                     Tk.parent = FieldBase.transform;
                     Tk.GetComponent<TokenController>().Associate(GF[x, y]);
 
-                    Tk.position = ToSpaceCoordinates(x, GF.SizeH + 1);
+                    Tk.localPosition = ToSpaceCoordinates(x, GF.SizeH + 1);
                     Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
                     NewTokens.Add(Tk.GetComponent<TokenController>());
 
@@ -79,8 +139,7 @@ public class FieldController: MonoBehaviour
                     Tk.gameObject.name = string.Format("it_{0}[{1},{2}]", GF[x, y].ID, x, y);
 
                 }
-                //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));                
-
+                //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
             }
     }
 
@@ -97,34 +156,18 @@ public class FieldController: MonoBehaviour
             }
             catch (System.Exception) { }
         });
+        State = FieldStates.Removing;
     }
 
-    private void FillOriginals( ) //init arrray of token prefabs
+    public void SlideTokens()
     {
-        Originals.Clear( );
-        for(int i = 0; i < 5; i++)
-        {
-            Transform t = GameObject.Find(string.Format("Token{0}", i)).transform;
-            Originals.Add(t);
-        }
-    }
+        State = FieldStates.Slide;
+        List<TokenController> tks = new List<TokenController>();
+        Tokens.FindAll(tk => tk.Value.GetComponent<TokenController>().InMotion).
+            ForEach(delegate (KeyValuePair<int, Transform> kv) {
+                tks.Add(kv.Value.GetComponent<TokenController>());                
+            });
 
-    public void DrawField( )// Place all known tokens to their respective places
-    {
-        Transform tmp;
-        for(int i = 0; i < GF.SizeH; i++)
-            for(int j = 0; j < GF.SizeL; j++)
-            {
-                //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
-                int id = GF[j, i].ID;
-                tmp = Tokens.Find(x => x.Key == id).Value;
-                if (!(tmp is null))
-                {
-                    //tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
-                    tmp.position = ToSpaceCoordinates(j, i);
-                    tmp.GetComponent<TokenController>().Created = false;
-                }
-            }
     }
 
     public Vector3 ToSpaceCoordinates(int x, int y)
@@ -133,45 +176,32 @@ public class FieldController: MonoBehaviour
         return new Vector3(x * size - 8, 4 - y * size, 0);
     }
 
-    // Update is called once per frame
-    void Update( )
-    {
-        if (State == FieldStates.Slide)
-        {
-            GF.Fill(true);            
-            PopulateTokens();
-            DrawField();
-            State = FieldStates.Ready;
-            return;
-        }
-    }
-
-    private int GetSeedFromControl( )
+    private int GetSeedFromControl()
     {
         GameObject go = GameObject.Find("interface_debug/inp_seed/Text");
 
-        if(go == null)
+        if (go == null)
             return -1;
 
-        Text If = go.GetComponent<Text>( );
+        Text If = go.GetComponent<Text>();
         try
         {
             int newseed = System.Convert.ToInt32(If.text);
             return newseed;
         }
 
-        catch(System.FormatException) { return -1; }
+        catch (System.FormatException) { return -1; }
         //return -2;
     }
 
-    public void ClearSolutions( )
+    public void ClearSolutions()
     {
         //        GF.Clasterize( );
         //GF.GetLines( );
         //if (GF.Slide( ))
-        GF.Fill( true );
-        PopulateTokens( );
-        DrawField( );
+        GF.Fill(true);
+        PopulateTokens();
+        DrawField();
     }
 
     public TokenController ClickHandle()
@@ -189,7 +219,7 @@ public class FieldController: MonoBehaviour
                     tk.Clicked = true;
                     tk.item.NextValue();
                 }
-                
+
                 Text nm = GameObject.Find("SelectedItemName").GetComponent<Text>();
                 if (nm != null)
                 {
@@ -199,5 +229,19 @@ public class FieldController: MonoBehaviour
             }
         }
         return null;
+    }
+
+    public List<TokenController> GetMovingTokens()
+    {
+        List<TokenController> res = new List<TokenController>();
+        foreach (KeyValuePair<int, Transform> kvp in Tokens)
+        {
+            if (kvp.Value)
+                if (kvp.Value.GetComponent<TokenController>().InMotion)
+                {
+                    res.Add(kvp.Value.GetComponent<TokenController>());
+                }
+        }
+        return res;
     }
 }

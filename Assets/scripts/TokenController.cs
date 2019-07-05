@@ -14,20 +14,20 @@ public class TokenController : MonoBehaviour
     {
         get
         {
-            return (transform.position - GamePosition).magnitude > 0.2f;
+            return (transform.localPosition - GamePosition).magnitude > 0.2f;
         }
     }
 
     public int value => (item is null) ? 0 : item.Value;
-    private bool perish;
-    private bool death;
+    public bool perish { get; internal set; }
+    public bool death { get; internal set; }
     public bool Created;// { get; internal set; }
 
     public bool Clicked { get; internal set; }
 
     private void Awake()
     {
-        GamePosition = transform.position;
+        GamePosition = transform.localPosition;
         perish = false;
         death = false;
         Created = true;
@@ -42,21 +42,21 @@ public class TokenController : MonoBehaviour
     void Update()
     {
         if (Created) return;
-            if (transform.position != GamePosition)
+            if (transform.localPosition != GamePosition)
             {
                 if (value == 0)
                 {
                     GamePosition += new Vector3(0, 0, 0.2f); ;
-                    transform.position = GamePosition;
+                    transform.localPosition = GamePosition;
                 }
                 else
                 {
-                    if (perish && (transform.position - GamePosition).magnitude < 0.4f)
+                    if (perish && (transform.localPosition - GamePosition).magnitude < 0.4f)
                     {
-                        transform.position = GamePosition;
+                        transform.localPosition = GamePosition;
                     }
                     else
-                        transform.position = Vector3.Lerp(transform.position, GamePosition, Time.deltaTime * speed);
+                        transform.localPosition = Vector3.Lerp(transform.localPosition, GamePosition, Time.deltaTime * speed);
 
                 }
             }
@@ -64,7 +64,6 @@ public class TokenController : MonoBehaviour
         if (perish && !InMotion)
         {
             death = true;
-            perish = false;
         }
 
         if (death)
