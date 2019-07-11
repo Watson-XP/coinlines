@@ -10,16 +10,23 @@ namespace conilines.unity
     {
         public string name;
         public object p1;
+        public int Stage;
 
         public GameAction(string name, object p1)
         {
-            this.name = name;
-            this.p1 = p1;
+            init(name, p1);
         }
+
         public GameAction(string name)
         {
+            init(name, null);
+        }
+
+        private void init(string name, object p1)
+        {
             this.name = name;
-            p1 = null;
+            this.p1 = p1;
+            Stage = 0;
         }
 
         public static GameAction Slide

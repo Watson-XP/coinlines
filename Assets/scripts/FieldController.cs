@@ -5,243 +5,314 @@ using conilines.engine;
 using conilines.unity;
 using WSTools;
 using UnityEngine.UI;
-public enum FieldStates
+using System;
+
+namespace conilines.unity
 {
-    Ready, Slide,
-    Removing
-}
-public class FieldController : MonoBehaviour
-{
-    //      Well, on a second thought, maybe pool is not required: items addede to a board
-    //  only when field created and sometime when new required. At most 1/s for a 2-3 sec at all.
-    //  private SpritePool Pool;
-    private List<KeyValuePair<int, Transform>> Tokens;
-    private List<Transform> Originals;
-    private GameField GF;
-    public FieldStates State;
-    private bool autofill;
-    public GameObject FieldBase;
-
-    public TheGame Game;
-    public List<TokenController> NewTokens;
-
-    private void Awake()
+    public enum FieldStates
     {
-        Game = Director.Game;
-        if (FieldBase == null)
-        {
-            Director.Field = this;
-            autofill = false;
-        }
-        else
-            autofill = true;
+        Ready, Slide,
+        Removing,
+        Cleanup,
+        Hold
     }
-
-    // Start is called before the first frame update
-    void Start()
+    public class FieldController : MonoBehaviour
     {
+        public GameField FieldData;
+        private List<TokenController> Tokens;
+        private TokenController[] TokenOriginals;
+        private List<TokenController> KilledTokens;
+        public FieldStates State { get; private set; }
+        private List<TokenController> SlidingTokens;
 
-        //Pool = new SpritePool( ); 
-        Tokens = new List<KeyValuePair<int, Transform>>();
-        Originals = new List<Transform>();
-        FillOriginals();
-
-        if (FieldBase == null)
-            FieldBase = GameObject.Find("Field/Pool");
-
-        GF = Game.Field;
-        State = FieldStates.Ready;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (autofill)  // nonmanageable mode always show 'map' :)
+        private void Awake()
         {
-            ClearDestroyedTokens();
-            AddNewTokens();
-            DrawField();
-            return;
+            State = FieldStates.Hold;
         }
 
-        switch (State)
+
+        // unity events
+        private void Start()
         {
-            case FieldStates.Removing:
-                if (Tokens.FindIndex(tk => tk.Value.GetComponent<TokenController>().perish) == -1)
-                    State = FieldStates.Ready;
-                break;
+            Tokens = new List<TokenController>();
+            LoadOriginals();
+            FieldData = TheGame.Me.Field;
+            State = FieldStates.Ready;
         }
 
-    }
-
-    private void FillOriginals() //init arrray of token prefabs
-    {
-        Originals.Clear();
-        for (int i = 0; i < 5; i++)
+        private void Update()
         {
-            Transform t = GameObject.Find(string.Format("Token{0}", i)).transform;
-            Originals.Add(t);
-        }
-    }
-
-    public void DrawField()// Place all known tokens to their respective places
-    {
-        Transform tmp;
-        for (int i = 0; i < GF.SizeH; i++)
-            for (int j = 0; j < GF.SizeL; j++)
+            switch (State)
             {
-                //SpriteRenderer s = Pool[GF[j, i].ID].GetObject( );
-                int id = GF[j, i].ID;
-                tmp = Tokens.Find(x => x.Key == id).Value;
-                if (!(tmp is null))
-                {
-                    //tmp.GetComponent<TokenController>( ).SetPosition(ToSpaceCoordinates(j, i));
-                    tmp.localPosition = ToSpaceCoordinates(j, i);
-                    tmp.GetComponent<TokenController>().Created = false;
-                }
-            }
-    }
+                case FieldStates.Hold:
+                    break;
+                case FieldStates.Ready:
+                    break;
+                case FieldStates.Slide:
+                    if (SlidingTokens.Count > 0)
+                    {
+                        SlidingTokens.RemoveAll(tk => !tk.InMotion);
 
-
-    public void PopulateTokens()
-    {
-        ClearDestroyedTokens();
-        AddNewTokens();
-    }
-
-    public void AddNewTokens() // Add tokens created on field
-    {
-        NewTokens = new List<TokenController>();
-
-        for (int x = 0; x < GF.SizeL; x++)
-            for (int y = 0; y < GF.SizeH; y++)
-            {
-                GameToken t = GF[x, y];
-                Transform Tk;
-                if (Tokens.FindIndex(tk => tk.Key == t.ID) > -1)
-                {
-                    Tk = Tokens.Find(tk => tk.Key == t.ID).Value;
-                    Tk.GetComponent<TokenController>().updateValue();
-                    Tk.gameObject.name = string.Format("!it_{0}[{1},{2}]", GF[x, y].ID, x, y);
-                    Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
-                }
-                else
-                {
-                    Tk = Instantiate(Originals[t.Value]).transform;
-                    Tk.parent = FieldBase.transform;
-                    Tk.GetComponent<TokenController>().Associate(GF[x, y]);
-
-                    Tk.localPosition = ToSpaceCoordinates(x, GF.SizeH + 1);
-                    Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
-                    NewTokens.Add(Tk.GetComponent<TokenController>());
-
-                    Tokens.Add(new KeyValuePair<int, Transform>(GF[x, y].ID, Tk));
-                    Tk.gameObject.name = string.Format("it_{0}[{1},{2}]", GF[x, y].ID, x, y);
-
-                }
-                //Tk.GetComponent<TokenController>().SetPosition(ToSpaceCoordinates(x, y));
-            }
-    }
-
-    public void ClearDestroyedTokens() // Send kill command to Tokens removed from field 
-    {
-        Tokens.ForEach(delegate (KeyValuePair<int, Transform> d)
-        {
-            try
-            {
-                if (!GF.HaveID(d.Key))
-                {
-                    d.Value.GetComponent<TokenController>().DoDestroy();
-                }
-            }
-            catch (System.Exception) { }
-        });
-        State = FieldStates.Removing;
-    }
-
-    public void SlideTokens()
-    {
-        State = FieldStates.Slide;
-        List<TokenController> tks = new List<TokenController>();
-        Tokens.FindAll(tk => tk.Value.GetComponent<TokenController>().InMotion).
-            ForEach(delegate (KeyValuePair<int, Transform> kv) {
-                tks.Add(kv.Value.GetComponent<TokenController>());                
-            });
-
-    }
-
-    public Vector3 ToSpaceCoordinates(int x, int y)
-    {
-        int size = 1;
-        return new Vector3(x * size - 8, 4 - y * size, 0);
-    }
-
-    private int GetSeedFromControl()
-    {
-        GameObject go = GameObject.Find("interface_debug/inp_seed/Text");
-
-        if (go == null)
-            return -1;
-
-        Text If = go.GetComponent<Text>();
-        try
-        {
-            int newseed = System.Convert.ToInt32(If.text);
-            return newseed;
-        }
-
-        catch (System.FormatException) { return -1; }
-        //return -2;
-    }
-
-    public void ClearSolutions()
-    {
-        //        GF.Clasterize( );
-        //GF.GetLines( );
-        //if (GF.Slide( ))
-        GF.Fill(true);
-        PopulateTokens();
-        DrawField();
-    }
-
-    public TokenController ClickHandle()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit, 100))
-            {
-                TokenController tk = hit.collider.gameObject.GetComponent<TokenController>();
-                if (tk != null)
-                {
-                    tk.Clicked = true;
-                    tk.item.NextValue();
-                }
-
-                Text nm = GameObject.Find("SelectedItemName").GetComponent<Text>();
-                if (nm != null)
-                {
-                    nm.text = string.Format("[{0}] {1}", tk.name, tk.value);
-                }
-                return tk;
+                        if (SlidingTokens.FindIndex(tk=>tk.InMotion && tk.Created == false ) == -1)
+                        {
+                            UpdateCreatedSlidingTokens();
+                        }/*
+                        if (SlidingTokens.Count > 0)
+                        {
+                            foreach (TokenController tk in SlidingTokens)
+                                tk.Created = false;
+                        }*/
+                    }
+                    else
+                        State = FieldStates.Ready;
+                    break;
+                case FieldStates.Removing:
+                    break;
+                case FieldStates.Cleanup:
+                    if (KilledTokens.Count == 0) State = FieldStates.Ready;
+                    else
+                    {
+                        if (KilledTokens[0] == null)
+                        {
+                            Tokens.Remove(KilledTokens[0]);
+                            KilledTokens.RemoveAt(0);
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
-        return null;
-    }
 
-    public List<TokenController> GetMovingTokens()
-    {
-        List<TokenController> res = new List<TokenController>();
-        foreach (KeyValuePair<int, Transform> kvp in Tokens)
+
+        //  External functions :)
+        public void AddTokens()
         {
-            if (kvp.Value)
-                if (kvp.Value.GetComponent<TokenController>().InMotion)
+            if (State != FieldStates.Ready) return;
+
+            for (int x = 0; x < FieldData.FieldLength; x++)
+                for (int y = 0; y < FieldData.FieldHeight; y++)
                 {
-                    res.Add(kvp.Value.GetComponent<TokenController>());
+                    if (Tokens.FindIndex(tc => tc.item.ID == FieldData[x, y].ID) == -1)
+                        SpawnNewToken(x, y);
                 }
         }
-        return res;
+
+        public void TeleportTokensInPlace()
+        {
+            if (State != FieldStates.Ready) return;
+            foreach (TokenController tk in Tokens)
+            {
+                tk.Created = false;
+                tk.Teleport();
+            }
+        }
+
+        public void RemoveSolution()
+        {
+            if (State != FieldStates.Ready) return;
+            bool removed = FieldData.GetLines();
+            //if (!removed) return;
+            GenocideTokens();
+        }
+
+        public void Slide()
+        {
+            if (State != FieldStates.Ready) return;
+            FillSlideList();
+            int dx;
+            int dy;
+            int sx;
+            int sy;
+            int ex;
+            int ey;
+            switch (FieldData.SlideDirection)
+            {
+                case Directions.Up:
+                    dx = 1;
+                    dy = 1;
+                    sx = 0;
+                    sy = 0;
+                    ex = FieldData.FieldLength - 1;
+                    ey = FieldData.FieldHeight - 1;
+                    break;
+                case Directions.Down:
+                    dx = 1;
+                    dy = -1;
+                    sx = 0;
+                    sy = FieldData.FieldHeight - 1;
+                    ex = FieldData.FieldLength - 1;
+                    ey = 0;
+                    break;
+                case Directions.Left:
+                    dx = 1;
+                    dy = 1;
+                    sx = 0;
+                    sy = 0;
+                    ex = FieldData.FieldLength - 1;
+                    ey = FieldData.FieldHeight - 1;
+
+                    break;
+                case Directions.Right:
+                    dx = -1;
+                    dy = 1;
+                    sx = FieldData.FieldLength - 1;
+                    sy = 0;
+                    ex = 0;
+                    ey = FieldData.FieldHeight - 1;
+                    break;
+                default:
+                    dx = 0;
+                    dy = 0;
+                    sx = 0;
+                    sy = 0;
+                    ex = 0;
+                    ey = 0;
+                    break;
+            }
+            for (int x = sx; x != ex; x += dx)
+                for (int y = sy; y != ey; y += dy)
+                {
+
+                }
+
+            UpdateCreatedSlidingTokens();
+        }
+
+        private void UpdateCreatedSlidingTokens()
+        {
+            int x = 0;
+            int y = 0;
+            while (x < FieldData.FieldLength)
+            {
+                y = 0;
+                while (y < FieldData.FieldHeight && SlidingTokens.FindIndex(tx => tx.Created && tx.item.ID == FieldData[x, y].ID) == -1)
+                    y++;
+                if (y < FieldData.FieldHeight)
+                    SlidingTokens.Find(tx => tx.Created && tx.item.ID == FieldData[x, y].ID).Created = false;
+                x++;
+            }
+        }
+
+        public void FillSlideList()
+        {
+
+            //FieldData.Slide(); //       debug only  !!!
+
+            SlidingTokens = new List<TokenController>();
+            for (int x = 0; x < FieldData.FieldLength; x++)
+                for (int y = 0; y < FieldData.FieldHeight; y++)
+                {
+                    int idx = Tokens.FindIndex(tc => tc.item.ID == FieldData[x, y].ID);
+                    if (idx > -1)
+                    {
+                        Tokens[idx].SetPosition(LocalPosition(x, y));
+                        if (Tokens[idx].InMotion)
+                            SlidingTokens.Add(Tokens[idx]);
+                    }
+                }
+            foreach (TokenController tk in Tokens)
+                if (tk.Created) SlidingTokens.Add(tk);
+
+            if (SlidingTokens.Count > 0)
+                State = FieldStates.Slide;
+            else
+                State = FieldStates.Ready;
+        }
+
+        public void RemoveAllSolutions()
+        {
+            if (State != FieldStates.Ready) return;
+            AddTokens();
+            TeleportTokensInPlace();
+            bool loop = false;
+            do
+            {
+                RemoveSolution();
+                loop = (KilledTokens.Count > 0);
+                Slide();
+
+            } while (loop);
+        }
+
+        public static Vector3 LocalPosition(int x, int y)
+        {
+            int size = 1;
+            int sx = 1;
+            int sy = 1;
+            return new Vector3(x: (x * size) + sx, y: (y * size) + sy, z: 0);
+        }
+
+        //  Internal functions :D
+
+        private void LoadOriginals()
+        {
+            TokenOriginals = new TokenController[GameToken.maxIndex];
+            for (int i = 0; i < GameToken.maxIndex; i++)
+            {
+
+                TokenOriginals[i] = GameObject.Find("coins").transform.Find(string.Format("Token{0}", i)).GetComponent<TokenController>();
+            }
+        }
+        private void SpawnNewToken(int x, int y)
+        {
+            Transform fieldParent = GameObject.Find("Field/current").GetComponent<Transform>();
+            TokenController newToken = GameObject.Instantiate<Transform>(TokenOriginals[FieldData[x, y].Value].GetComponent<Transform>(), fieldParent).GetComponent<TokenController>();
+            newToken.SetPosition(LocalPosition(x, y));
+            newToken.Associate(FieldData[x, y]);
+            Vector3 SpawnPosition;
+            switch (FieldData.SlideDirection)
+            {
+                case Directions.Up:
+                    SpawnPosition = LocalPosition(x, FieldData.FieldHeight);
+                    break;
+                case Directions.Down:
+                    SpawnPosition = LocalPosition(x, -1);
+                    break;
+                case Directions.Left:
+                    SpawnPosition = LocalPosition(FieldData.FieldLength, y);
+                    break;
+                case Directions.Right:
+                    SpawnPosition = LocalPosition(-1, y);
+                    break;
+                default:
+                    SpawnPosition = LocalPosition(-1, -1);
+                    break;
+            }
+            newToken.transform.localPosition = SpawnPosition;
+            Tokens.Add(newToken);
+            newToken.Created = true;
+        }
+
+        private void Syncronize()
+        {
+            Tokens.Clear();
+            AddTokens();
+            TeleportTokensInPlace();
+        }
+
+        private void GenocideTokens()
+        {
+            List<int> ids = new List<int>();
+            /*foreach (TokenController tk in Tokens)
+            {
+                ids.Add(tk.item.ID);
+            }*/
+            for (int x = 0; x < FieldData.FieldLength; x++)
+                for (int y = 0; y < FieldData.FieldHeight; y++)
+                {
+                    ids.Add(FieldData[x, y].ID);
+                }
+            foreach (TokenController tk in Tokens)
+                if (!ids.Contains(tk.item.ID))
+                    //foreach (int idx in ids)            
+                    //Tokens.Find(tk => tk.item.ID == udx).Kill();           
+                    tk.Kill();
+            KilledTokens = Tokens.FindAll(tk => tk.perish == true);
+            if (KilledTokens.Count > 0)
+                State = FieldStates.Cleanup;
+            else
+                State = FieldStates.Ready;
+        }
     }
 }

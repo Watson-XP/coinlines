@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace conilines.engine
 {
     public class TheGame
-    {        
+    {
+        public static TheGame Me;
         private List<GameToken> Tokens;
         private List<GameField> Fields;
         private int currentfield = 0;
@@ -24,10 +25,18 @@ namespace conilines.engine
 
         public TheGame( )
         {
-            Tokens = new List<GameToken>( );
-            Fields = new List<GameField>( );
-            currentfield = -1;
-            CreateField(100);
+            if (TheGame.Me is null)
+            {
+                Tokens = new List<GameToken>();
+                Fields = new List<GameField>();
+                currentfield = -1;
+                CreateField(100);
+                Me = this;
+            }
+            else
+            {
+                throw new Exception("Game already created");
+            }
         }
 
         public void CreateField(int seed)

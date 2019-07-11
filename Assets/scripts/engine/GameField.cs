@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,13 +15,14 @@ namespace conilines.engine
         {
             get { return Data[x, y]; }
         }
+        
         private int sizeL;
         private int sizeH;
         public Directions SlideDirection { get; private set; }
 
         private readonly int Seed;
-        public int SizeL => sizeL;
-        public int SizeH => sizeH;
+        public int FieldLength => sizeL;
+        public int FieldHeight => sizeH;
         Random rnd;
 
         public int nextSeed
@@ -38,7 +40,7 @@ namespace conilines.engine
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
             InitField();
-            Fill(true);
+            //Fill(true);
             SlideDirection = Directions.Up;
         }
 
@@ -180,7 +182,7 @@ namespace conilines.engine
             do
             {
                 reslide = false;
-                for (int x = 0; x < SizeL; x++)
+                for (int x = 0; x < FieldLength; x++)
                     for (int y = 0; y < sizeH; y++)
                     {
                         if (InRange(x + dx, y + dy))
@@ -202,7 +204,7 @@ namespace conilines.engine
             do
             {
                 loop = false;
-                for (int x = 0; x < SizeL; x++)
+                for (int x = 0; x < FieldLength; x++)
                     for (int y = 0; y < sizeH; y++)
                     {
                         if (InRange(x, y))
@@ -232,6 +234,30 @@ namespace conilines.engine
             return (v1 >= 0) && (v1 < sizeL) && (v2 >= 0) && (v2 < sizeH);
         }
 
+        public int[] Coordinates(int id)
+        {
+            int x = -1;
+            int y = 0;
+            int[] res = new int[2];
+            res[0] = -1;
+            res[1] = -1;            
+            while (++x < FieldLength)
+            {
+                y = -1;
+                while (++y < FieldHeight)
+                {
+                    if (Data[x, y].ID == id)
+                    {
+                        res[0] = x;
+                        res[1] = y;
+                        x = FieldLength + 1;
+                        y = FieldHeight + 1;
+                    }
+                }               
+            }
+            return res;
+        }
+
         public bool HaveID(int id)
         {
             foreach (GameToken t in Data)
@@ -239,7 +265,6 @@ namespace conilines.engine
                 if (t.ID == id) return true;
             }
             return false;
-        }
-
+        }        
     }
 }
