@@ -6,11 +6,13 @@ using conilines.engine;
 using System;
 namespace conilines.unity
 {
-    public class TokenController : MonoBehaviour
+    public class TokenController : MonoBehaviour, IBeginDragHandler, IDragHandler,IEndDragHandler, IPointerClickHandler,IPointerEnterHandler, IPointerExitHandler
     {
         public Vector3 GamePosition;
         private readonly float speed = 6.2f;
         public GameToken item { get; private set; }
+        public Transform Selector;
+
         public bool InMotion
         {
             get
@@ -38,6 +40,8 @@ namespace conilines.unity
             perish = false;
             death = false;
             created = true;
+            Selector = transform.Find("selector");
+            Selector.gameObject.SetActive(false);
         }
         // Start is called before the first frame update
         void Start()
@@ -119,5 +123,42 @@ namespace conilines.unity
             perish = true;
         }
 
+        void IEndDragHandler.OnEndDrag(PointerEventData eventData)
+        {            
+            Debug.Log("DRAG END");
+            Selector.gameObject.SetActive(false);
+            created = false;
+        }
+
+        void IDragHandler.OnDrag(PointerEventData eventData)
+        {
+            //Debug.Log("DRAG !!!!");
+            transform.position = eventData.pointerCurrentRaycast.worldPosition;
+        }
+
+        void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
+        {
+                        Debug.Log("DRAG START");
+            Selector.gameObject.SetActive(true);
+            created = true;
+        }
+
+        void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
+        {
+            Clicked = true;
+            Debug.Log(item.ToString());
+            item.NextValue();
+            updateValue();
+        }
+
+        void IPointerEnterHandler.OnPointerEnter(PointerEventData eventData)
+        {
+            Selector.gameObject.SetActive(true);
+        }
+
+        void IPointerExitHandler.OnPointerExit(PointerEventData eventData)
+        {
+            Selector.gameObject.SetActive(false);
+        }
     }
 }
