@@ -73,7 +73,6 @@ namespace conilines.unity
                         break;
                 }
             }
-
         }
 
         public void ClearAllSolutions()
