@@ -12,7 +12,8 @@ namespace conilines.unity
     public enum DirectorState { Ready, Start, Busy, Wait,
         Cleaning,
         Slide,
-        CLeanUpComplete
+        CLeanUpComplete,
+        Init
     }
 
     public enum ControllerState { Ready, Start, Run }
@@ -46,6 +47,8 @@ namespace conilines.unity
             this["Draw"] = new GameAction("DrawField");
             this["Clean"] = new GameAction("CleanUpRemoved");
             this["Solve"] = new GameAction("CleanUpSolutions");
+            this["Init"] = new GameAction("InitGame");
+            
         }
     }
 

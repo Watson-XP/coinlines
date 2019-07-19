@@ -30,7 +30,7 @@ namespace conilines.engine
                 Tokens = new List<GameToken>();
                 Fields = new List<GameField>();
                 currentfield = -1;
-                CreateField(100);
+                //CreateField(100);
                 Me = this;
             }
             else
@@ -43,8 +43,9 @@ namespace conilines.engine
         {
             GameField gf = new GameField(seed: seed);
             Fields.Add(gf);
-            currentfield = Fields.Count - 1;
-            ///gf.Fill(true);
+            currentfield = Fields.Count - 1;            
         }
+
+
     }
 }

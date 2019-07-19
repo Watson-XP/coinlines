@@ -9,13 +9,16 @@ namespace conilines.engine
 {
     public class GameField
     {
+        //public delegate void DoInitField();
+
+
         private readonly int minLine = 3;
         private GameToken[,] Data;
         public GameToken this[int x, int y]
         {
             get { return Data[x, y]; }
         }
-        
+
         private int sizeL;
         private int sizeH;
         public Directions SlideDirection { get; private set; }
@@ -39,12 +42,11 @@ namespace conilines.engine
             this.sizeH = sizeH;
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
-            InitField();
-            //Fill(true);
             SlideDirection = Directions.Up;
+            InitField();
         }
 
-        private void InitField()
+        public void InitField()
         {
             rnd = new Random(Seed);
 
@@ -228,6 +230,42 @@ namespace conilines.engine
             Data[x, y] = Data[dx, dy];
             Data[dx, dy] = tmp;
         }
+        public void SwapTokens(int id, Directions where)
+        {
+            int x = -1;
+            int y = -1;
+            while (++x < FieldLength)
+            {
+                while (++y < FieldHeight)
+                {
+                    if (Data[x, y].ID == id)
+                        break;
+                }
+                if (y < FieldHeight)
+                    if (Data[x, y].ID == id)
+                        break;
+                y = -1;
+            }
+            if (InRange(x,y))
+            if (Data[x, y].ID == id)
+            {
+                switch (where)
+                {
+                    case Directions.Up:
+                        Swap(x, y, x, y + 1);
+                        break;
+                    case Directions.Down:
+                        Swap(x, y, x, y - 1);
+                        break;
+                    case Directions.Left:
+                        Swap(x, y, x - 1, y);
+                        break;
+                    case Directions.Right:
+                        Swap(x, y, x + 1, y);
+                        break;
+                }
+            }
+        }
 
         private bool InRange(int v1, int v2)
         {
@@ -240,7 +278,7 @@ namespace conilines.engine
             int y = 0;
             int[] res = new int[2];
             res[0] = -1;
-            res[1] = -1;            
+            res[1] = -1;
             while (++x < FieldLength)
             {
                 y = -1;
@@ -253,7 +291,7 @@ namespace conilines.engine
                         x = FieldLength + 1;
                         y = FieldHeight + 1;
                     }
-                }               
+                }
             }
             return res;
         }
@@ -265,6 +303,7 @@ namespace conilines.engine
                 if (t.ID == id) return true;
             }
             return false;
-        }        
+
+        }
     }
 }
