@@ -10,7 +10,7 @@ namespace conilines.unity
     {
         public string name;
         public object p1;
-        public int Stage;
+        public int Step;
 
         public GameAction(string name, object p1)
         {
@@ -26,7 +26,7 @@ namespace conilines.unity
         {
             this.name = name;
             this.p1 = p1;
-            Stage = 0;
+            Step = 0;
         }
 
         public static GameAction Slide

@@ -27,17 +27,26 @@ namespace conilines.unity
 
         private void Awake()
         {
-            State = FieldStates.Hold;
+            State = FieldStates.Hold;            
         }
-
 
         // unity events
         private void Start()
         {
             Tokens = new List<TokenController>();
-            LoadOriginals();
-            FieldData = TheGame.Me.Field;
+            LoadOriginals();            
             State = FieldStates.Ready;
+        }
+
+        public void OnGameFieldInit()
+        {
+            FieldData = TheGame.Me.Field;
+            foreach (TokenController tk in Tokens)
+                Destroy(tk.gameObject);
+            
+            Tokens.Clear();
+            AddTokens();
+            TeleportTokensInPlace();
         }
 
         private void Update()
@@ -96,6 +105,7 @@ namespace conilines.unity
                     if (Tokens.FindIndex(tc => tc.item.ID == FieldData[x, y].ID) == -1)
                         SpawnNewToken(x, y);
                 }
+            GenocideTokens();
         }
 
         public void TeleportTokensInPlace()
@@ -286,7 +296,6 @@ namespace conilines.unity
 
         private void Syncronize()
         {
-            Tokens.Clear();
             AddTokens();
             TeleportTokensInPlace();
         }
