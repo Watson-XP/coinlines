@@ -15,12 +15,13 @@ namespace conilines.engine
         internal static readonly int maxIndex = 5;
 
         public int Value => value;
+        public bool Alive { get; private set; }
 
         public GameToken(int value)
         {
             this.id = IDFactory.GetID();
             this.value = value;
-            
+            Alive = true;
         }
 
         public static bool operator ==(GameToken a, GameToken b)
@@ -47,7 +48,7 @@ namespace conilines.engine
             if (obj == null) return false;
             if(obj.GetType( ) == typeof(int)) return this.value == (int)obj;
             if(obj.GetType( ) != typeof(GameToken)) return false;
-            return  ((GameToken)obj).Value == value ;            
+            return  ((GameToken)obj).Value == value ;
         }
 
         public override int GetHashCode( )
@@ -64,6 +65,11 @@ namespace conilines.engine
         {
             value++;
             if (value >= maxIndex) value = 1;            
+        }
+
+        public void Kill()
+        {
+            Alive = false;
         }
     }
 }

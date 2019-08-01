@@ -24,7 +24,7 @@ namespace conilines.unity
         }
 
         public int value => (item is null) ? 0 : item.Value;
-        public bool perish { get; internal set; }
+        public bool perish => (item is null) ? false : !item.Alive; 
         public bool death { get; internal set; }
         public bool created;// { get; internal set; }
 
@@ -42,10 +42,10 @@ namespace conilines.unity
         private void Awake()
         {
             GamePosition = transform.localPosition;
-            perish = false;
+            
             death = false;
             created = true;
-            Drag = false;
+            Drag = false;            
             Selector = transform.Find("selector");
             Selector.gameObject.SetActive(false);
         }
@@ -58,6 +58,9 @@ namespace conilines.unity
         // Update is called once per frame
         void Update()
         {
+            //if (item is null)
+            //    Destroy(this.gameObject);
+
             if (Drag)
             {
                 if (transform.position != DragPosition)
@@ -85,20 +88,20 @@ namespace conilines.unity
 
                     }
                 }
-
+            
             if (perish && !InMotion)
             {
-                death = true;
-            }
-
-            if (death)
-            {
                 Vector3 t = transform.localScale;
-                t.x -= 1.0f / 20.0f;
-                transform.localScale = t;
+                t.x -= 1.0f / 20.0f;                
                 if (t.x < 0.1f)
-                    Destroy(this.gameObject);
+                {
+                    death = true;
+                    t.x = 0.1f;
+                    //Destroy(this.gameObject);
+                }
+                transform.localScale = t;
             }
+            
 
         }
 
@@ -134,7 +137,8 @@ namespace conilines.unity
 
         public void Kill()
         {
-            perish = true;
+            //perish = true;
+            item.Kill();
         }
 
         void IEndDragHandler.OnEndDrag(PointerEventData eventData)

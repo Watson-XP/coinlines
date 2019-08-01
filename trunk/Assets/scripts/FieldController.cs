@@ -81,11 +81,17 @@ namespace conilines.unity
                     if (KilledTokens.Count == 0) State = FieldStates.Ready;
                     else
                     {
+                        if (KilledTokens[0].death)
+                        {
+                            Destroy(KilledTokens[0].gameObject);
+                            Tokens.Remove(KilledTokens[0]);
+                            KilledTokens.RemoveAt(0);
+                        }/*
                         if (KilledTokens[0] == null)
                         {
                             Tokens.Remove(KilledTokens[0]);
                             KilledTokens.RemoveAt(0);
-                        }
+                        }*/
                     }
                     break;
                 default:
@@ -95,7 +101,7 @@ namespace conilines.unity
 
 
         //  External functions :)
-        public void AddTokens()
+        private void AddTokens()
         {
             if (State != FieldStates.Ready) return;
 
@@ -118,7 +124,7 @@ namespace conilines.unity
             }
         }
 
-        public void RemoveSolution()
+        private void RemoveSolution()
         {
             if (State != FieldStates.Ready) return;
             bool removed = FieldData.GetLines();
@@ -195,10 +201,12 @@ namespace conilines.unity
             int y = 0;
             while (x < FieldData.FieldLength)
             {
-                y = 0;
-                while (y < FieldData.FieldHeight && SlidingTokens.FindIndex(tx => tx.Created && tx.item.ID == FieldData[x, y].ID) == -1)
-                    y++;
-                if (y < FieldData.FieldHeight)
+                if (FieldData.SlideDirection == Directions.Up) y = 0;
+                    else y = FieldData.FieldHeight - 1;
+
+                while (y < FieldData.FieldHeight && y >= 0 && SlidingTokens.FindIndex(tx => tx.Created && tx.item.ID == FieldData[x, y].ID) == -1)
+                    if (FieldData.SlideDirection == Directions.Up) y++; else y--;
+                if (y < FieldData.FieldHeight && y >= 0)
                     SlidingTokens.Find(tx => tx.Created && tx.item.ID == FieldData[x, y].ID).Created = false;
                 x++;
             }
@@ -302,11 +310,7 @@ namespace conilines.unity
 
         private void GenocideTokens()
         {
-            List<int> ids = new List<int>();
-            /*foreach (TokenController tk in Tokens)
-            {
-                ids.Add(tk.item.ID);
-            }*/
+/*            List<int> ids = new List<int>();
             for (int x = 0; x < FieldData.FieldLength; x++)
                 for (int y = 0; y < FieldData.FieldHeight; y++)
                 {
@@ -314,10 +318,20 @@ namespace conilines.unity
                 }
             foreach (TokenController tk in Tokens)
                 if (!ids.Contains(tk.item.ID))
-                    //foreach (int idx in ids)            
+                    //foreach (int idx in ids)
                     //Tokens.Find(tk => tk.item.ID == udx).Kill();           
                     tk.Kill();
-            KilledTokens = Tokens.FindAll(tk => tk.perish == true);
+            */
+            KilledTokens = Tokens.FindAll(tk => tk.perish == true && tk.created == false);
+            int i = 0;
+            /*
+            foreach (TokenController tk in KilledTokens)
+            {
+                (GameObject.Find(string.Format("txxDelete ({0})", i++))).GetComponent<Text>().text = tk.name;
+            }
+            while (i < 21)
+                (GameObject.Find(string.Format("txxDelete ({0})", i++))).GetComponent<Text>().text = "";
+                */
             if (KilledTokens.Count > 0)
                 State = FieldStates.Cleanup;
             else
