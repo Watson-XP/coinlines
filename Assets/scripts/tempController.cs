@@ -59,8 +59,7 @@ namespace conilines.unity
                 case 1: // Slide existing tokens to fill gaps
                     if (FieldView.State == FieldStates.Ready)
                     {
-                        Game.Field.Slide();
-                        FieldView.Slide();
+                        SlideField();
                         ActiveAction.Step = 0;
                     }
                     break;
@@ -77,9 +76,13 @@ namespace conilines.unity
                 case 10: // Finished
                     if (FieldView.State == FieldStates.Ready)
                     {
-                        FieldView.Slide();
-                        ActiveAction = new GameAction("none");
+                        //FieldView.Slide();
+                        SlideField();          
+                    }
+                    if (FieldView.State == FieldStates.Ready)
+                    {
                         State = DirectorState.Ready;
+                        ActiveAction = new GameAction("none");
                     }
                     break;
             }
