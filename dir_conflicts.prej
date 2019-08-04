@@ -1,0 +1,6 @@
+Trying to delete property 'svn:mergeinfo'
+but the property has been locally modified.
+<<<<<<< (local property value)
+/trunk:24-31||||||| (incoming 'changed from' value)
+/trunk:24-28=======
+>>>>>>> (incoming 'changed to' value)

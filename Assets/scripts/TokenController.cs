@@ -14,6 +14,8 @@ namespace conilines.unity
         private readonly float speed = 6.2f;
         public GameToken item { get; private set; }
         public Transform Selector;
+        public FieldController parent;
+        public int id;
 
         public bool InMotion
         {
@@ -24,15 +26,16 @@ namespace conilines.unity
         }
 
         public int value => (item is null) ? 0 : item.Value;
-        public bool perish => (item is null) ? false : !item.Alive; 
+        public bool perish => (item is null) ? true : !item.Alive; 
         public bool death { get; internal set; }
         public bool created;// { get; internal set; }
+        
 
         public bool Clicked { get; internal set; }
         public bool Created
         {
-            get => created; set
-            {
+            get => created;
+            set{
                 created = value;
                 gameObject.SetActive(!created);
             }
@@ -48,11 +51,11 @@ namespace conilines.unity
             Drag = false;            
             Selector = transform.Find("selector");
             Selector.gameObject.SetActive(false);
+            parent = null;
         }
         // Start is called before the first frame update
         void Start()
         {
-
         }
 
         // Update is called once per frame
@@ -60,12 +63,12 @@ namespace conilines.unity
         {
             //if (item is null)
             //    Destroy(this.gameObject);
-
+            if (parent is null) return;
             if (Drag)
             {
                 if (transform.position != DragPosition)
                 {
-                    transform.position = Vector3.Lerp(transform.position, DragPosition, Mathf.Clamp(Time.deltaTime * speed,0.1f,1.0f));
+                    transform.position = Vector3.Lerp(transform.position, DragPosition, Mathf.Clamp(Time.deltaTime * 4*speed,0.1f,1.0f));
                 }
                 return;
             }
@@ -85,7 +88,6 @@ namespace conilines.unity
                         }
                         else
                             transform.localPosition = Vector3.Lerp(transform.localPosition, GamePosition, Time.deltaTime * speed);
-
                     }
                 }
             
@@ -95,8 +97,9 @@ namespace conilines.unity
                 t.x -= 1.0f / 20.0f;                
                 if (t.x < 0.1f)
                 {
-                    death = true;
+                    death = true;                    
                     t.x = 0.1f;
+                    gameObject.name = "dead";
                     //Destroy(this.gameObject);
                 }
                 transform.localScale = t;
@@ -108,6 +111,7 @@ namespace conilines.unity
         public void Associate(GameToken gt)
         {
             item = gt;
+            id = gt.ID;
             if (value == 0)
             {
                 GetComponent<BoxCollider>().enabled = false;
@@ -142,16 +146,15 @@ namespace conilines.unity
         }
 
         void IEndDragHandler.OnEndDrag(PointerEventData eventData)
-        {
-            Debug.Log("DRAG END");
+        {            
             Selector.gameObject.SetActive(false);
             created = false;
             Drag = false;
             if (eventData.pointerCurrentRaycast.worldPosition != Vector3.zero)
                 if (Mathf.Abs((eventData.pointerCurrentRaycast.worldPosition - OldPosition).magnitude) > 1)
             {
-                    SendMessageUpwards("OnSwapTokens", new SwapTokensData(item.ID, DragDirction(eventData.pointerCurrentRaycast.worldPosition)));
-                    switch (DragDirction(eventData.pointerCurrentRaycast.worldPosition))
+                    SendMessageUpwards("OnSwapTokens", new SwapTokensData(item.ID, DragDirection(eventData.pointerCurrentRaycast.worldPosition)));
+                    switch (DragDirection(eventData.pointerCurrentRaycast.worldPosition))
                     {
                         case Directions.Up:
                             DragPosition = OldPosition + Vector3.up;
@@ -169,7 +172,7 @@ namespace conilines.unity
                 }
         }
 
-        Directions DragDirction(Vector3 newPosition)
+        Directions DragDirection(Vector3 newPosition)
         {
             Vector3 distance = newPosition - OldPosition;
             if (Mathf.Abs(distance.x) > Mathf.Abs(distance.y))
@@ -198,7 +201,7 @@ namespace conilines.unity
                 else
                 {
                     //Vector3 distance = eventData.pointerCurrentRaycast.worldPosition - OldPosition;
-                    switch (DragDirction(eventData.pointerCurrentRaycast.worldPosition))
+                    switch (DragDirection(eventData.pointerCurrentRaycast.worldPosition))
                     {
                         case Directions.Up:
                             DragPosition = OldPosition + Vector3.up;
@@ -245,12 +248,15 @@ namespace conilines.unity
         void IPointerEnterHandler.OnPointerEnter(PointerEventData eventData)
         {
             //Selector.gameObject.SetActive(true);
+            parent.OnCursorShow(this.transform);
         }
 
         void IPointerExitHandler.OnPointerExit(PointerEventData eventData)
         {
             //Selector.gameObject.SetActive(false);
+            parent.OnCursorHide();
         }
+
     }
 
     internal class SwapTokensData
@@ -264,4 +270,6 @@ namespace conilines.unity
             this.directions = directions;
         }
     }
+
+
 }
