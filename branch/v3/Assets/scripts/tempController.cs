@@ -41,8 +41,6 @@ namespace conilines.unity
             {
                 CleanupSolutions();
             }
-
-            
         }
 
         private void KeyboardCommands()
