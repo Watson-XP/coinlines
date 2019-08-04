@@ -70,6 +70,6 @@ namespace conilines.engine
         public void Kill()
         {
             Alive = false;
-        }
+        }        
     }
 }
