@@ -7,10 +7,47 @@ using System.Threading.Tasks;
 
 namespace conilines.engine
 {
+    public struct GameTokenData
+    {
+        public int x;
+        public int y;
+        public int id;
+        public int value;
+
+        internal GameTokenData(ItemData itd) : this()
+        {
+            x = itd.x;
+            y = itd.y;
+            id = itd.Token.ID;
+            value = itd.Token.Value;
+        }
+
+        internal GameTokenData(int x, int y, GameToken t) : this()
+        {
+            this.x = x;
+            this.y = y;
+            id = t.ID;
+            value = t.Value;
+        }
+    }
+
+    public class TokenEventArgs : EventArgs
+    {
+        public List<GameTokenData> Tokens;
+
+        public TokenEventArgs()
+        {
+            Tokens = new List<GameTokenData>();
+        }
+    }
+
     public class GameField
     {
         //public delegate void DoInitField();
 
+        public event EventHandler<TokenEventArgs> TokensAdded;
+        public event EventHandler<TokenEventArgs> TokensKilled;
+        public event EventHandler<TokenEventArgs> FieldChanged;
 
         private readonly int minLine = 3;
         private GameToken[,] Data;
@@ -21,12 +58,13 @@ namespace conilines.engine
 
         private int sizeL;
         private int sizeH;
-        public Directions SlideDirection { get; private set; }
+        public Directions SlideDirection { get; set; }
 
         private readonly int Seed;
         public int FieldLength => sizeL;
         public int FieldHeight => sizeH;
         Random rnd;
+        private int TotalTokens;
 
         public int nextSeed
         {
@@ -36,13 +74,15 @@ namespace conilines.engine
             }
         }
 
+        public bool Complete { get { return (TotalTokens == sizeL * sizeH); } }
+
         public GameField(int sizeL = 10, int sizeH = 10, int seed = 0)
         {
             this.sizeL = sizeL;
             this.sizeH = sizeH;
             Data = new GameToken[sizeL, sizeH];
             Seed = seed;
-            SlideDirection = Directions.Down;
+            SlideDirection = Directions.Up;
             InitField();
         }
 
@@ -53,6 +93,8 @@ namespace conilines.engine
             for (int x = 0; x < sizeL; x++)
                 for (int y = 0; y < sizeH; y++)
                     Data[x, y] = new GameToken(rnd.Next(1, GameToken.maxIndex));
+            TotalTokens = sizeH * sizeL;
+
         }
 
         public override bool Equals(object obj)
@@ -75,7 +117,7 @@ namespace conilines.engine
             return Math.Sign(diff);
         }
 
-        public bool GetLines()
+        public bool GetLines(bool FindAndKill = true)
         {
             List<ItemData> Cluster = new List<ItemData>();
             Queue<ItemData> Candidate = new Queue<ItemData>();
@@ -104,16 +146,16 @@ namespace conilines.engine
                                 xlen++;
                             }
                             xlen++;
-                        }
-                        else
-                        {
-                            if (xmax < xlen)
-                            {
-                                xmax = xlen;
-                                xmaxstart = xlenstart;
-                            }
+                        }else
                             xlen = 0;
+
+                        if (xmax < xlen)
+                        {
+                            xmax = xlen;
+                            xmaxstart = xlenstart;
                         }
+                        
+
                         if (xmax >= minLine)
                             linefound = true;
                     }
@@ -127,14 +169,24 @@ namespace conilines.engine
 
                 BuildCluster(ref Cluster, x: xmaxstart, y: y - 1);
 
-                foreach (ItemData itd in Cluster)
+                TokenEventArgs ea = new TokenEventArgs();
+
+                if (Cluster.Count > 0)
                 {
-                    Data[itd.x, itd.y].Kill();
-                 //   Data[itd.x, itd.y] = new GameToken(0);
+                    if (FindAndKill)
+                    {
+                        foreach (ItemData itd in Cluster)
+                        {
+                            Data[itd.x, itd.y].Kill();
+                            TotalTokens--;
+                            ea.Tokens.Add(new GameTokenData(itd));
+                        }
+                        OnTokensKilled(ea);
+                    }
+                    return true;
                 }
 
-                if (Cluster.Count > 9)
-                    return true;                
+
             }
 
             return false;
@@ -144,7 +196,7 @@ namespace conilines.engine
         {
             int clusterValue = Data[x, y].Value;
             bool keepup = true;
-            int maxcluster = 40;            
+            int maxcluster = 40;
             while (keepup)
             {
                 keepup = false;
@@ -196,6 +248,30 @@ namespace conilines.engine
                 Cluster.Clear();
         }
 
+        internal GameToken NextToken(int x, int y)
+        {
+            switch (SlideDirection)
+            {
+                case Directions.Up:
+                    if (InRange(x, y - 1))
+                        return Data[x, y - 1];
+                    break;
+                case Directions.Down:
+                    if (InRange(x, y + 1))
+                        return Data[x, y + 1];
+                    break;
+                case Directions.Left:
+                    if (InRange(x - 1, y))
+                        return Data[x - 1, y];
+                    break;
+                case Directions.Right:
+                    if (InRange(x + 1, y))
+                        return Data[x + 1, y];
+                    break;
+            }
+            return null;
+        }
+
         private bool TestAddCluster(List<ItemData> Cluster, ItemData itd)
         {
             if (InRange(itd.x, itd.y))
@@ -215,8 +291,8 @@ namespace conilines.engine
             {
                 case Directions.Left: dx = -1; break;
                 case Directions.Right: dx = 1; break;
-                case Directions.Up: dy = -1; break;
-                case Directions.Down: dy = 1; break;
+                case Directions.Up: dy = 1; break;
+                case Directions.Down: dy = -1; break;
             }
             bool reslide;
             bool result = false;
@@ -236,16 +312,30 @@ namespace conilines.engine
                                 }
                     }
             } while (reslide);
+            if (result)
+            {
+                TokenEventArgs ea = new TokenEventArgs();
+                OnFieldChanged(ea);
+            }
             return result;
+        }
+
+        private void AddToken(int x, int y, TokenEventArgs ea)
+        {
+            Data[x, y] = new GameToken(nextSeed);
+            ea.Tokens.Add(new GameTokenData(x, y, Data[x, y]));
+            TotalTokens++;
         }
 
         public void Fill(bool nolines = false)
         {
+            TokenEventArgs ea = new TokenEventArgs();
+
             bool loop = false;
             do
             {
                 loop = false;
-                for (int x = 0; x < FieldLength; x++)
+                for (int x = 0; x < sizeL; x++)
                     for (int y = 0; y < sizeH; y++)
                     {
                         if (InRange(x, y))
@@ -253,6 +343,8 @@ namespace conilines.engine
                             {
                                 //GameToken t = ;
                                 Data[x, y] = new GameToken(nextSeed);
+                                ea.Tokens.Add(new GameTokenData(x, y, Data[x, y]));
+                                TotalTokens++;
                             }
                     }
                 if (nolines)
@@ -261,6 +353,85 @@ namespace conilines.engine
                 while (nolines && GetLines()) Slide();
 
             } while (loop);
+            if (ea.Tokens.Count > 0)
+                OnTokensAdded(ea);
+        }
+
+        public void FillOneLine(bool nolines = false)
+        {
+            TokenEventArgs ea = new TokenEventArgs();
+
+
+            //int x, y, sx, sy, ex, ey, dx, dy, steps;
+            //switch (SlideDirection)
+            //{
+            //    case Directions.Up:
+            //        sx = 0; sy = sizeH - 1; ex = sizeL; ey = 0; steps = sizeH;
+            //        break;
+            //    case Directions.Down:
+            //        sx = 0; sy = 0; ex = sizeL; ey = sizeH - 1; steps = sizeH;
+            //        break;
+            //    case Directions.Left:
+            //        sx = sizeL - 1; sy = 0; ex = 0; ey = sizeH - 1; steps = sizeL;
+            //        break;
+            //    case Directions.Right:
+            //        sx = 0; sy = 0; ex = 0; ey = sizeH - 1; steps = sizeL;
+            //        break;
+            //}
+            //dx = Math.Sign(ex - sx); dy = Math.Sign(ey - sy);
+
+            switch (SlideDirection)
+            {
+                case Directions.Up:
+
+                    for (int x = 0; x < sizeH; x++)
+                    {
+                        int y = sizeH - 1;
+                        while ((y >= 0) && (Data[x, y].Alive)) y--;
+                        if (y >= 0)
+                        {
+                            AddToken(x, y, ea);
+                        }
+                    }
+                    break;
+                case Directions.Down:
+                    for (int x = 0; x < sizeH; x++)
+                    {
+                        int y = 0;
+                        while ((y < sizeH) && (Data[x, y].Alive)) y++;
+                        if (y < sizeH)
+                        {
+                            AddToken(x, y, ea);
+                        }
+                    }
+                    break;
+                case Directions.Right:
+                    for (int y = 0; y < sizeH; y++)
+                    {
+                        int x = sizeH - 1;
+                        while ((x >= 0) && (Data[x, y].Alive)) x--;
+                        if (x >= 0)
+                        {
+                            AddToken(x, y, ea);
+                        }
+                    }
+                    break;
+                case Directions.Left:
+                    for (int y = 0; y < sizeH; y++)
+                    {
+                        int x = 0;
+                        while ((x < sizeH) && (Data[x, y].Alive)) x++;
+                        if (x < sizeL)
+                        {
+                            AddToken(x, y, ea);
+                        }
+                    }
+                    break;
+            }
+            if (ea.Tokens.Count > 0)
+                OnTokensAdded(ea);
+            else
+                TotalTokens = sizeH * sizeL;
         }
 
         private void Swap(int x, int y, int dx, int dy)
@@ -271,7 +442,7 @@ namespace conilines.engine
         }
 
         public void SwapTokens(int id, Directions where)
-        {            
+        {
             int x = -1;
             int y = -1;
             while (++x < FieldLength)
@@ -345,5 +516,26 @@ namespace conilines.engine
             return false;
 
         }
+
+
+        protected virtual void OnTokensAdded(TokenEventArgs e)
+        {
+            EventHandler<TokenEventArgs> handler = TokensAdded;
+            handler?.Invoke(this, e);
+        }
+
+        protected virtual void OnTokensKilled(TokenEventArgs e)
+        {
+            EventHandler<TokenEventArgs> handler = TokensKilled;
+            handler?.Invoke(this, e);
+        }
+
+        protected virtual void OnFieldChanged(TokenEventArgs e)
+        {
+            EventHandler<TokenEventArgs> handler = FieldChanged;
+            handler?.Invoke(this, e);
+        }
+
+
     }
 }

@@ -17,9 +17,8 @@ namespace conilines.engine
         {
             get
             {
-                if(Fields.Count == 0) return null;
-                if(currentfield < Fields.Count) return Fields[currentfield];
-                return null;
+                if (currentfield < Fields.Count) return Fields[currentfield];
+                throw new ArgumentOutOfRangeException("Game have no fields");               
             }
         }
 
@@ -45,7 +44,5 @@ namespace conilines.engine
             Fields.Add(gf);
             currentfield = Fields.Count - 1;            
         }
-
-
     }
 }

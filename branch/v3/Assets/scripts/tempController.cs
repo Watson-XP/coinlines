@@ -27,9 +27,13 @@ namespace conilines.unity
         // Update is called once per frame
         void Update()
         {
-            debugModeText.text = string.Format("{0}[{1}]",  State.ToString(), ActiveAction.Step);
-            if (State == DirectorState.Ready) return;
-            if (ActiveAction.name == "InitGame") 
+            debugModeText.text = string.Format("{0}[{1}]", State.ToString(), ActiveAction.Step);
+            if (State == DirectorState.Ready)
+            {
+                KeyboardCommands();
+                return;
+            }
+            if (ActiveAction.name == "InitGame")
             {
                 DoInitField();
             }
@@ -37,67 +41,82 @@ namespace conilines.unity
             {
                 CleanupSolutions();
             }
+
+            
+        }
+
+        private void KeyboardCommands()
+        {
+            if (FieldView.State != FieldStates.Ready) return;
+
+            if (Input.GetKeyUp(KeyCode.UpArrow))
+            {
+                Game.Field.SlideDirection = Directions.Up;
+            }
+            if (Input.GetKeyUp(KeyCode.DownArrow))
+            {
+                Game.Field.SlideDirection = Directions.Down;
+            }
+            if (Input.GetKeyUp(KeyCode.LeftArrow))
+            {
+                Game.Field.SlideDirection = Directions.Left;
+            }
+            if (Input.GetKeyUp(KeyCode.RightArrow))
+            {
+                Game.Field.SlideDirection = Directions.Right;
+            }
         }
 
         private void CleanupSolutions()
         {
-            switch (ActiveAction.Step)
+            if (FieldView.State == FieldStates.Ready)
+                switch (ActiveAction.Step)
             {
                 case 0: // remove solved tokens
-                    if (FieldView.State == FieldStates.Ready)
-                    {
-                        FieldView.RemoveSolution();
-                        if (FieldView.State == FieldStates.Ready)
-                        {
-                            ActiveAction.Step = 2;
-                        }
-                        else
-                            ActiveAction.Step = 1;
-                    }
+                    
+                        TheGame.Me.Field.GetLines();
+                        ActiveAction.Step = 1;                    
                     break;
 
-                case 1: // Slide existing tokens to fill gaps
-                    if (FieldView.State == FieldStates.Ready)
-                    {
-                        SlideField();
-                        ActiveAction.Step = 0;
-                    }
+                case 1: // Slide existing tokens to fill gaps                    
+                        Game.Field.Slide();
+                        if (Game.Field.GetLines(FindAndKill: false))
+                            ActiveAction.Step = 0;
+                        else
+                            ActiveAction.Step = 2;
                     break;
 
                 case 2: // Everything is clear and nothing to slide => add new tokens to fill up
-                    if (FieldView.State == FieldStates.Ready)
-                    {
                         //FieldView.RemoveSolution();
-                        Game.Field.Fill(true);                        
-                        FieldView.AddTokens();                        
-                        ActiveAction.Step = 10;
-                    }
-                    break;
-                case 10: // Finished
-                    if (FieldView.State == FieldStates.Ready)
-                    {
-                        //FieldView.Slide();
-                        SlideField();          
-                    }
-                    if (FieldView.State == FieldStates.Ready)
-                    {
-                        State = DirectorState.Ready;
-                        ActiveAction = new GameAction("none");
-                    }
+                        Game.Field.FillOneLine();
+                        if (!Game.Field.Complete)
+                            return;
+
+                        if (Game.Field.GetLines(FindAndKill: false))
+                            ActiveAction.Step = 0;
+                        else
+                        {
+                            State = DirectorState.Ready;
+                            ActiveAction = new GameAction("none");
+                        }
                     break;
             }
         }
 
         public void DoInitField()
         {
-            Debug.Log("on init");
             State = DirectorState.Ready;
-            
+
             TheGame.Me.CreateField((new System.Random()).Next(150));
-            FieldView.OnGameFieldInit();
+            FieldView.SyncField();
             ActiveAction = new GameAction("none");
         }
 
+        public void ClearSolution()
+        {
+            if (State != DirectorState.Ready) return;
+            TheGame.Me.Field.GetLines();
+        }
         public void ClearAllSolutions()
         {
 
@@ -111,7 +130,11 @@ namespace conilines.unity
         public void SlideField()
         {
             Game.Field.Slide();
-            FieldView.Slide();
+        }
+
+        public void FillField()
+        {
+            Game.Field.Fill();
         }
 
         private void OnSwapTokens(SwapTokensData data)
@@ -119,7 +142,7 @@ namespace conilines.unity
             if (State != DirectorState.Ready) return;
             TheGame.Me.Field.SwapTokens(data.iD, data.directions);
             FieldView.FillSlideList();
-            ClearAllSolutions();            
+            ClearAllSolutions();
         }
     }
 }
