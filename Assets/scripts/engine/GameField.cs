@@ -94,7 +94,7 @@ namespace conilines.engine
                 for (int y = 0; y < sizeH; y++)
                     Data[x, y] = new GameToken(rnd.Next(1, GameToken.maxIndex));
             TotalTokens = sizeH * sizeL;
-
+            Fill(true);
         }
 
         public override bool Equals(object obj)
