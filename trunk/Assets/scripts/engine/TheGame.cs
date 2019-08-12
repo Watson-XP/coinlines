@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 namespace conilines.engine
 {
     public class TheGame
-    {
+    {                
+        public event EventHandler<EventArgs> FieldSet;
+
         public static TheGame Me;
         private List<GameToken> Tokens;
         private List<GameField> Fields;
@@ -17,7 +19,7 @@ namespace conilines.engine
         {
             get
             {
-                if (currentfield < Fields.Count) return Fields[currentfield];
+                if ((currentfield > -1 ) && (currentfield < Fields.Count)) return Fields[currentfield];
                 throw new ArgumentOutOfRangeException("Game have no fields");               
             }
         }
@@ -42,7 +44,14 @@ namespace conilines.engine
         {
             GameField gf = new GameField(seed: seed);
             Fields.Add(gf);
-            currentfield = Fields.Count - 1;            
+            currentfield = Fields.Count - 1;
+            OnFieldSet(new EventArgs());
         }
+        protected virtual void OnFieldSet(EventArgs e)
+        {
+            EventHandler<EventArgs> handler = FieldSet;
+            handler?.Invoke(this, e);
+        }
+
     }
 }
