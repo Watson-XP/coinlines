@@ -16,10 +16,14 @@ namespace conilines.unity
         internal GameAction ActiveAction;
         public Text debugModeText;
 
+        private void Awake()
+        {
+            Game = new TheGame();
+        }
         // Start is called before the first frame update
         void Start()
         {
-            Game = new TheGame();
+            
             State = DirectorState.Init;
             ActiveAction = new GameAction("InitGame");
         }
