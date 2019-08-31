@@ -18,7 +18,7 @@ namespace conilines.unity
     {
         public GameField FieldData;
         private List<TokenController> Tokens;
-        private TokenController[] TokenOriginals;
+        public TokenController[] TokenOriginals { get; private set; }
         private FieldStates state;
         private List<TokenController> SlidingTokens;
         private bool associated;
@@ -41,10 +41,16 @@ namespace conilines.unity
         {
             Tokens = new List<TokenController>();
             LoadOriginals();
-            associated = false;
-            GameObject cObj = GameObject.Find("SelectCursor");
-            Debug.LogFormat("cursor:", cObj.name);
-            cursor = cObj.GetComponent<Transform>();
+            associated = false;            
+            if (cursor == null)
+            {
+                GameObject cObj = GameObject.Find("SelectCursor");
+                if (cObj != null)
+                    cursor = cObj.GetComponent<Transform>();
+                else
+                    throw new System.Exception("Cursor not set");
+            }
+            
             //cursor = GameObject.Find("SelectCursor").transform;
 
             DebugText2 = GameObject.Find("Debugtext2").GetComponent<UnityEngine.UI.Text>();
@@ -73,10 +79,10 @@ namespace conilines.unity
                     ReleaseNextSlide();
                     break;
                 case FieldStates.Cleanup:                    
-                    foreach (TokenController tc in SlidingTokens.FindAll(tk => tk.death))
+                    foreach (TokenController tc in SlidingTokens.FindAll(tk => tk.Death))
                         Destroy(tc.gameObject);
-                    Tokens.RemoveAll(tk => tk.death);
-                    SlidingTokens.RemoveAll(tk => tk.death);
+                    Tokens.RemoveAll(tk => tk.Death);
+                    SlidingTokens.RemoveAll(tk => tk.Death);
                     if (SlidingTokens.Count == 0) state = FieldStates.Ready;
                     break;
             }
@@ -90,7 +96,7 @@ namespace conilines.unity
             for (int x = 0; x < FieldData.FieldLength; x++)
                 for (int y = 0; y < FieldData.FieldHeight; y++)
                 {
-                    int idx = Tokens.FindIndex(tc => tc.item.ID == FieldData[x, y].ID);
+                    int idx = Tokens.FindIndex(tc => tc.Item.ID == FieldData[x, y].ID);
                     if (idx > -1)
                     {
                         Tokens[idx].SetPosition(LocalPosition(x, y));
@@ -159,7 +165,7 @@ namespace conilines.unity
         }
         private void SpawnNewToken(int x, int y, bool teleport=false)
         {
-            int idx = Tokens.FindIndex(tc => tc.id == FieldData[x, y].ID);
+            int idx = Tokens.FindIndex(tc => tc.Id == FieldData[x, y].ID);
             if (idx > -1)
             {
                 Tokens[idx].Teleport();
@@ -199,7 +205,7 @@ namespace conilines.unity
                         break;
                 }
                 newToken.transform.localPosition = SpawnPosition;
-                newToken.created = true;
+                newToken._created = true;
             }
             Tokens.Add(newToken);
         }
@@ -212,14 +218,14 @@ namespace conilines.unity
             }
             foreach (TokenController tk in SlidingTokens)
                 tk.Created = false;
-            SlidingTokens.RemoveAll(tk => !tk.created && !tk.InMotion);
+            SlidingTokens.RemoveAll(tk => !tk._created && !tk.InMotion);
 
             foreach(TokenController tk in SlidingTokens)
             {
                 GameToken t = FieldData.NextToken(Mathf.CeilToInt(tk.GamePosition.x), Mathf.CeilToInt(tk.GamePosition.y));
                 if (t is null) continue;
 
-                if (SlidingTokens.FindIndex(tkn=>tkn.item.ID == t.ID) == -1)
+                if (SlidingTokens.FindIndex(tkn=>tkn.Item.ID == t.ID) == -1)
                 {
                     //tk.gameObject.SetActive(true);
                     tk.Created = false;
@@ -231,10 +237,10 @@ namespace conilines.unity
             Tokens.ForEach(
                 delegate (TokenController tc) 
                 {
-                    if (tc.perish) Destroy(tc.gameObject);
+                    if (tc.Perish) Destroy(tc.gameObject);
                 });
 
-            Tokens.RemoveAll(tc => tc.perish);
+            Tokens.RemoveAll(tc => tc.Perish);
             FillSlideList();
 
             DebugText2.text = FieldData.GetLines(FindAndKill: false).ToString();
@@ -245,7 +251,7 @@ namespace conilines.unity
             state = FieldStates.Cleanup;
             SlidingTokens.ForEach(delegate (TokenController tk) { tk.Teleport(); });
             SlidingTokens.Clear();
-            SlidingTokens.AddRange(Tokens.FindAll(tk => tk.perish));
+            SlidingTokens.AddRange(Tokens.FindAll(tk => tk.Perish));
             foreach (TokenController tc in SlidingTokens)
                 tc.gameObject.name = "[killed]" + tc.gameObject.name;
 

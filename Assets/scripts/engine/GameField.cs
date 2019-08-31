@@ -3,11 +3,26 @@ using System.Collections.Generic;
 
 namespace conilines.engine
 {
-    internal struct GameTokenData
+    /// <summary>
+    /// Token`s id, value and coordinates in one struct
+    /// </summary>
+    public struct GameTokenData
     {
+        /// <summary>
+        /// column
+        /// </summary>
         public int x;
+        /// <summary>
+        /// row
+        /// </summary>
         public int y;
+        /// <summary>
+        /// Field[x,y].id
+        /// </summary>
         public int id;
+        /// <summary>
+        /// Field[x,y].Value
+        /// </summary>
         public int value;
 
         internal GameTokenData(ItemData itd) : this()
@@ -32,6 +47,9 @@ namespace conilines.engine
     /// </summary>
     public class TokenEventArgs : EventArgs
     {
+        /// <summary>
+        /// Tokens whis message applies to
+        /// </summary>
         public List<GameTokenData> Tokens;
         /// <summary>
         /// Constructor only initialize internal fields. Values should be set separately
@@ -91,7 +109,7 @@ namespace conilines.engine
         Random rnd;
         private int TotalTokens;
 
-        private int nextSeed
+        private int NextSeed
         {
             get
             {
@@ -127,15 +145,7 @@ namespace conilines.engine
             TotalTokens = sizeH * sizeL;
             Fill(true);
         }
-        /// <summary>
-        /// Not implemented (yet?)
-        /// </summary>
-        /// <param name="obj">Any object</param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
+
         /// <summary>
         /// Length and heighrt of field
         /// </summary>
@@ -150,10 +160,10 @@ namespace conilines.engine
             return Math.Sign(diff);
         }
         /// <summary>
-        /// 
+        /// Solve field and kill solution tokens
         /// </summary>
-        /// <param name="FindAndKill"></param>
-        /// <returns></returns>
+        /// <param name="FindAndKill">sohuld solution tokens be killed</param>
+        /// <returns>true if field solved</returns>
         public bool GetLines(bool FindAndKill = true)
         {
             List<ItemData> Cluster = new List<ItemData>();
@@ -167,7 +177,8 @@ namespace conilines.engine
             int xlen = 0;
             int xmaxstart = 0;
             int xlenstart = 0;
-            while ((++y < sizeH) && !linefound) // scan lines
+
+            while ((++y < FieldHeight) && !linefound) // scan rows
             {
                 x = 0;
                 xlen = 0;
@@ -204,29 +215,14 @@ namespace conilines.engine
                 for (int ix = xmaxstart; ix < xmaxstart + xmax; ix++)
                     Cluster.Add(new ItemData() { x = ix, y = y - 1, check = false, Token = Data[ix, y - 1] });
 
-                BuildCluster(ref Cluster, x: xmaxstart, y: y - 1);
+                BuildCluster(Cluster, x: xmaxstart, y: y - 1);
 
-                TokenEventArgs ea = new TokenEventArgs();
-
-                if (Cluster.Count > 0)
-                {
-                    if (FindAndKill)
-                    {
-                        foreach (ItemData itd in Cluster)
-                        {
-                            Data[itd.x, itd.y].Kill();
-                            TotalTokens--;
-                            ea.Tokens.Add(new GameTokenData(itd));
-                        }
-                        OnTokensKilled(ea);
-                    }
+                if (CheckCluster(FindAndKill, Cluster))
                     return true;
-                }
-
             }
 
             x = -1;
-            while ((++x < sizeL) && !linefound) // scan columns
+            while ((++x < FieldLength) && !linefound) // scan columns
             {
                 y = 0;
                 xlen = 0;
@@ -260,32 +256,39 @@ namespace conilines.engine
             if (linefound)
             {
                 for (int iy = xmaxstart; iy < xmaxstart + xmax; iy++)
-                    Cluster.Add(new ItemData() { x = x-1, y = iy, check = false, Token = Data[x-1, iy] });
+                    Cluster.Add(new ItemData() { x = x - 1, y = iy, check = false, Token = Data[x - 1, iy] });
 
-                BuildCluster(ref Cluster, x: x-1, y: xmaxstart);
-
-                TokenEventArgs ea = new TokenEventArgs();
-
-                if (Cluster.Count > 0)
-                {
-                    if (FindAndKill)
-                    {
-                        foreach (ItemData itd in Cluster)
-                        {
-                            Data[itd.x, itd.y].Kill();
-                            TotalTokens--;
-                            ea.Tokens.Add(new GameTokenData(itd));
-                        }
-                        OnTokensKilled(ea);
-                    }
+                BuildCluster(Cluster, x: x - 1, y: xmaxstart);
+                if (CheckCluster(FindAndKill, Cluster))
                     return true;
-                }
             }
 
             return false;
         }
 
-        private void BuildCluster(ref List<ItemData> Cluster, int x, int y)
+        // used in GetLines
+        private bool CheckCluster(bool FindAndKill, List<ItemData> Cluster)
+        {
+            TokenEventArgs ea = new TokenEventArgs();
+            if (Cluster.Count > 0)
+            {
+                if (FindAndKill)
+                {
+                    foreach (ItemData itd in Cluster)
+                    {
+                        Data[itd.x, itd.y].Kill();
+                        TotalTokens--;
+                        ea.Tokens.Add(new GameTokenData(itd));
+                    }
+                    OnTokensKilled(ea);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // Grow cluster in all directions, adding tokens with same value
+        private void BuildCluster(List<ItemData> Cluster, int x, int y)
         {
             int clusterValue = Data[x, y].Value;
             bool keepup = true;
@@ -298,40 +301,11 @@ namespace conilines.engine
                     ItemData itd = Cluster[cIndex];
                     if (itd.check) continue;
 
-                    if (InRange(itd.x - 1, itd.y))
-                        if (Data[itd.x - 1, itd.y].Value == clusterValue)
-                        {
-                            bool test = TestAddCluster(Cluster,
-                                new ItemData() { x = itd.x - 1, y = itd.y, check = false, Token = Data[itd.x - 1, itd.y] }
-                                );
-                            keepup = keepup || test;
-                        }
-                    if (InRange(itd.x + 1, itd.y))
-                        if (Data[itd.x + 1, itd.y].Value == clusterValue)
-                        {
-                            bool test = TestAddCluster(Cluster,
-                                new ItemData() { x = itd.x + 1, y = itd.y, check = false, Token = Data[itd.x + 1, itd.y] }
-                                );
-                            keepup = keepup || test;
-                        }
+                    keepup = CheckToken(Cluster, itd.x - 1, itd.y, clusterValue, keepup);
+                    keepup = CheckToken(Cluster, itd.x + 1, itd.y, clusterValue, keepup);
+                    keepup = CheckToken(Cluster, itd.x, itd.y - 1, clusterValue, keepup);
+                    keepup = CheckToken(Cluster, itd.x, itd.y + 1, clusterValue, keepup);
 
-                    if (InRange(itd.x, itd.y - 1))
-                        if (Data[itd.x, itd.y - 1].Value == clusterValue)
-                        {
-                            bool test = TestAddCluster(Cluster,
-                                  new ItemData() { x = itd.x, y = itd.y - 1, check = false, Token = Data[itd.x, itd.y - 1] }
-                                 );
-                            keepup = keepup || test;
-                        }
-
-                    if (InRange(itd.x, itd.y + 1))
-                        if (Data[itd.x, itd.y + 1].Value == clusterValue)
-                        {
-                            bool test = TestAddCluster(Cluster,
-                                 new ItemData() { x = itd.x, y = itd.y + 1, check = false, Token = Data[itd.x, itd.y + 1] }
-                                );
-                            keepup = keepup || test;
-                        }
                     itd.check = true;
                     Cluster[cIndex] = itd;
                 }
@@ -340,18 +314,50 @@ namespace conilines.engine
             if (maxcluster <= Cluster.Count)
                 Cluster.Clear();
         }
+        // used in BuildCluster: check token on coords dx, dy and add to cluseter
+        private bool CheckToken(List<ItemData> Cluster, int dx, int dy, int clusterValue, bool keepup)
+        {
+            if (InRange( dx,  dy))
+                if (Data[ dx,  dy].Value == clusterValue)
+                {
+                    bool test = TestAddCluster(Cluster,
+                        new ItemData() { x =  dx, y = dy, check = false, Token = Data[ dx,  dy] }
+                        );
+                    keepup = keepup || test;
+                }
 
+            return keepup;
+        }
+        // add ItemData to cluster , if it's not already there
+        private bool TestAddCluster(List<ItemData> Cluster, ItemData itd)
+        {
+            if (InRange(itd.x, itd.y))
+                if (Cluster.FindIndex(t => t.x == itd.x && t.y == itd.y) == -1)
+                {
+                    Cluster.Add(itd);
+                    return true;
+                }
+            return false;
+        }
+        
+        /// <summary>
+        /// Token "Next" to given coordinates with current  slide direction
+        /// if no such token - return null
+        /// </summary>
+        /// <param name="x">row number</param>
+        /// <param name="y">column nubmer</param>
+        /// <returns>following token or null</returns>
         internal GameToken NextToken(int x, int y)
         {
             switch (SlideDirection)
             {
                 case Directions.Up:
-                    if (InRange(x, y - 1))
-                        return Data[x, y - 1];
-                    break;
-                case Directions.Down:
                     if (InRange(x, y + 1))
                         return Data[x, y + 1];
+                    break;
+                case Directions.Down:
+                    if (InRange(x, y - 1))
+                        return Data[x, y - 1];
                     break;
                 case Directions.Left:
                     if (InRange(x - 1, y))
@@ -364,18 +370,11 @@ namespace conilines.engine
             }
             return null;
         }
-
-        private bool TestAddCluster(List<ItemData> Cluster, ItemData itd)
-        {
-            if (InRange(itd.x, itd.y))
-                if (Cluster.FindIndex(t => t.x == itd.x && t.y == itd.y) == -1)
-                {
-                    Cluster.Add(itd);
-                    return true;
-                }
-            return false;
-        }
-
+        
+        /// <summary>
+        /// move tokens to current slide direction to fill holes on a field
+        /// </summary>
+        /// <returns></returns>
         public bool Slide()
         {
             int dx = 0;
@@ -415,11 +414,14 @@ namespace conilines.engine
 
         private void AddToken(int x, int y, TokenEventArgs ea)
         {
-            Data[x, y] = new GameToken(nextSeed);
+            Data[x, y] = new GameToken(NextSeed);
             ea.Tokens.Add(new GameTokenData(x, y, Data[x, y]));
             TotalTokens++;
         }
-
+        /// <summary>
+        /// Fill holes on a field with random tokens
+        /// </summary>
+        /// <param name="nolines">ensure filled tokens never result a ready solution</param>
         public void Fill(bool nolines = false)
         {
             TokenEventArgs ea = new TokenEventArgs();
@@ -435,43 +437,30 @@ namespace conilines.engine
                             if (!Data[x, y].Alive)
                             {
                                 //GameToken t = ;
-                                Data[x, y] = new GameToken(nextSeed);
+                                Data[x, y] = new GameToken(NextSeed);
                                 ea.Tokens.Add(new GameTokenData(x, y, Data[x, y]));
                                 TotalTokens++;
                             }
                     }
-                if (nolines)
-                    loop = GetLines();
-                if (loop) Slide();
-                while (nolines && GetLines()) Slide();
+
+                while (nolines && GetLines())
+                {
+                    Slide();
+                    loop = true;
+                }
 
             } while (loop);
             if (ea.Tokens.Count > 0)
                 OnTokensAdded(ea);
         }
 
+        /// <summary>
+        /// Fill holes on a field with random tokens, according to slide direction
+        /// </summary>
+        /// <param name="nolines"></param>
         public void FillOneLine(bool nolines = false)
         {
             TokenEventArgs ea = new TokenEventArgs();
-
-
-            //int x, y, sx, sy, ex, ey, dx, dy, steps;
-            //switch (SlideDirection)
-            //{
-            //    case Directions.Up:
-            //        sx = 0; sy = sizeH - 1; ex = sizeL; ey = 0; steps = sizeH;
-            //        break;
-            //    case Directions.Down:
-            //        sx = 0; sy = 0; ex = sizeL; ey = sizeH - 1; steps = sizeH;
-            //        break;
-            //    case Directions.Left:
-            //        sx = sizeL - 1; sy = 0; ex = 0; ey = sizeH - 1; steps = sizeL;
-            //        break;
-            //    case Directions.Right:
-            //        sx = 0; sy = 0; ex = 0; ey = sizeH - 1; steps = sizeL;
-            //        break;
-            //}
-            //dx = Math.Sign(ex - sx); dy = Math.Sign(ey - sy);
 
             switch (SlideDirection)
             {
@@ -527,6 +516,9 @@ namespace conilines.engine
                 TotalTokens = sizeH * sizeL;
         }
 
+        /// <summary>
+        /// swap tokens on (x, y) and (dx, dy)
+        /// </summary>
         private void Swap(int x, int y, int dx, int dy)
         {
             GameToken tmp = Data[x, y];
@@ -534,22 +526,17 @@ namespace conilines.engine
             Data[dx, dy] = tmp;
         }
 
+        /// <summary>
+        /// swap token with given id and its neighbour in given direction
+        /// </summary>
+        /// <param name="id">id of given token</param>
+        /// <param name="where">direction to swap token</param>
         public void SwapTokens(int id, Directions where)
         {
-            int x = -1;
-            int y = -1;
-            while (++x < FieldLength)
-            {
-                while (++y < FieldHeight)
-                {
-                    if (Data[x, y].ID == id)
-                        break;
-                }
-                if (y < FieldHeight)
-                    if (Data[x, y].ID == id)
-                        break;
-                y = -1;
-            }
+            int[] cx = Coordinates(id);
+            int x = cx[0];
+            int y = cx[1];
+
             if (InRange(x, y))
                 if (Data[x, y].ID == id)
                 {
@@ -571,11 +558,18 @@ namespace conilines.engine
                 }
         }
 
+        // check if coordinates inside field
         private bool InRange(int v1, int v2)
         {
             return (v1 >= 0) && (v1 < sizeL) && (v2 >= 0) && (v2 < sizeH);
         }
 
+        /// <summary>
+        /// find coordinates of token with id
+        /// as array res[0] = x, res[1] = y
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>{x,y}</returns>
         public int[] Coordinates(int id)
         {
             int x = -1;
@@ -600,29 +594,43 @@ namespace conilines.engine
             return res;
         }
 
+        /// <summary>
+        /// check if field have token with id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>true if field have token tiwh id, false otherwise</returns>
         public bool HaveID(int id)
         {
             foreach (GameToken t in Data)
-            {
                 if (t.ID == id) return true;
-            }
-            return false;
 
+            return false;
         }
 
-
+        /// <summary>
+        /// OnTokensAdded event starter
+        /// </summary>
+        /// <param name="e"></param>
         protected virtual void OnTokensAdded(TokenEventArgs e)
         {
             EventHandler<TokenEventArgs> handler = TokensAdded;
             handler?.Invoke(this, e);
         }
 
+        /// <summary>
+        /// OnTokensKilled event starter
+        /// </summary>
+        /// <param name="e"></param>
         protected virtual void OnTokensKilled(TokenEventArgs e)
         {
             EventHandler<TokenEventArgs> handler = TokensKilled;
             handler?.Invoke(this, e);
         }
 
+        /// <summary>
+        /// OnFieldChanged event starter
+        /// </summary>
+        /// <param name="e"></param>
         protected virtual void OnFieldChanged(TokenEventArgs e)
         {
             EventHandler<TokenEventArgs> handler = FieldChanged;
