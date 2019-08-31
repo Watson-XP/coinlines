@@ -4,7 +4,8 @@ using UnityEngine;
 using conilines.engine;
 using System;
 
-public class ScoreUpdate : MonoBehaviour
+
+class ScoreUpdate : MonoBehaviour
 {
     private TMPro.TextMeshPro mytext;
     private int score;

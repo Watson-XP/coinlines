@@ -7,20 +7,36 @@ using WSTools;
 
 namespace conilines.engine
 {
+    /// <summary>
+    /// Token and it's properties
+    /// </summary>
     public class GameToken
     {
         private readonly int id;
+        /// <summary>
+        /// global identifier 
+        /// </summary>
         public int ID => id;
-        private int value;
-        
+        private readonly int _value;       
 
-        public int Value => value;
+        /// <summary>
+        /// token value
+        /// </summary>
+        public int Value => _value;
+
+        /// <summary>
+        /// alive tokens are playable
+        /// </summary>
         public bool Alive { get; private set; }
 
+        /// <summary>
+        /// initialize value
+        /// </summary>
+        /// <param name="value"></param>
         public GameToken(int value)
         {
             this.id = IDFactory.GetID();
-            this.value = value;
+            this._value = value;
             Alive = true;
         }
 
@@ -46,9 +62,9 @@ namespace conilines.engine
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
-            if(obj.GetType( ) == typeof(int)) return this.value == (int)obj;
+            if(obj.GetType( ) == typeof(int)) return this._value == (int)obj;
             if(obj.GetType( ) != typeof(GameToken)) return false;
-            return  ((GameToken)obj).Value == value ;
+            return  ((GameToken)obj).Value == _value ;
         }
 
         public override int GetHashCode( )
@@ -58,7 +74,7 @@ namespace conilines.engine
 
         public override string ToString( )
         {
-            return string.Format("[{0}] {1}", id, value);
+            return string.Format("[{0}] {1}", id, _value);
         }
 
         public void Kill()
