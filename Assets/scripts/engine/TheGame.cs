@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 
 namespace conilines.engine
@@ -12,9 +9,15 @@ namespace conilines.engine
         public event EventHandler<EventArgs> FieldSet;
 
         public static TheGame Me;
+
+        internal static readonly int maxIndex = 6; // total number of different tokens
+        internal static Directions Direction = Directions.Down; // Default "Gravitation"
+
         private List<GameToken> Tokens;
         private List<GameField> Fields;
         private int currentfield = 0;
+        
+
         public GameField Field
         {
             get
