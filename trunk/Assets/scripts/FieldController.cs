@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace conilines.unity
 {
+    /// <summary>
+    /// Possible state of Field Renderer
+    /// </summary>
     public enum FieldStates
     {
         Ready, Slide,
@@ -39,7 +42,10 @@ namespace conilines.unity
             Tokens = new List<TokenController>();
             LoadOriginals();
             associated = false;
-            cursor = GameObject.Find("SelectCursor").transform;
+            GameObject cObj = GameObject.Find("SelectCursor");
+            Debug.LogFormat("cursor:", cObj.name);
+            cursor = cObj.GetComponent<Transform>();
+            //cursor = GameObject.Find("SelectCursor").transform;
 
             DebugText2 = GameObject.Find("Debugtext2").GetComponent<UnityEngine.UI.Text>();
         }
@@ -145,10 +151,9 @@ namespace conilines.unity
         //  Internal functions :D
         private void LoadOriginals()
         {
-            TokenOriginals = new TokenController[GameToken.maxIndex];
-            for (int i = 0; i < GameToken.maxIndex; i++)
+            TokenOriginals = new TokenController[TheGame.maxIndex];
+            for (int i = 0; i < TheGame.maxIndex; i++)
             {
-
                 TokenOriginals[i] = GameObject.Find("coins").transform.Find(string.Format("Token{0}", i)).GetComponent<TokenController>();
             }
         }

@@ -12,7 +12,7 @@ namespace conilines.engine
         private readonly int id;
         public int ID => id;
         private int value;
-        internal static readonly int maxIndex = 5;
+        
 
         public int Value => value;
         public bool Alive { get; private set; }
@@ -59,12 +59,6 @@ namespace conilines.engine
         public override string ToString( )
         {
             return string.Format("[{0}] {1}", id, value);
-        }
-
-        internal void NextValue()
-        {
-            value++;
-            if (value >= maxIndex) value = 1;            
         }
 
         public void Kill()

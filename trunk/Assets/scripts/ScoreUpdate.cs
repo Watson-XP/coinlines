@@ -6,7 +6,7 @@ using System;
 
 public class ScoreUpdate : MonoBehaviour
 {
-    TextMesh mytext;
+    private TMPro.TextMeshPro mytext;
     private int score;
 
     public int Score { get => score; set {
@@ -44,9 +44,9 @@ public class ScoreUpdate : MonoBehaviour
 
     void Start()
     {
-        mytext = GetComponent<TextMesh>();
+        mytext = GetComponent<TMPro.TextMeshPro>();
         TheGame.Me.FieldSet += SetField;
-        SetField(this, new EventArgs());
+        SetField(this, new EventArgs());        
     }
 
     private void ResetScore()
