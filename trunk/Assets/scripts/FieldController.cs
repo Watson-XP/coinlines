@@ -90,6 +90,10 @@ namespace conilines.unity
 
 
         //  External functions :)
+
+        /// <summary>
+        /// Fill List SlidingTokens  with tokens that currently on in place
+        /// </summary>
         public void FillSlideList()
         {
             
@@ -112,6 +116,10 @@ namespace conilines.unity
             else
                 state = FieldStates.Ready;
         }
+
+        /// <summary>
+        /// Move all tokens to their places simultaneously
+        /// </summary>
         public void TeleportTokensInPlace()
         {            
             foreach (TokenController tk in Tokens)
@@ -120,6 +128,10 @@ namespace conilines.unity
                 tk.Teleport();
             }
         }
+        /// <summary>
+        /// Translate game fiels 2D coordinates to 3D
+        /// </summary>
+        /// <returns>Vector3 Coordinates in 3D space for token</returns>
         public static Vector3 LocalPosition(int x, int y)
         {
             int size = 1;
@@ -127,6 +139,9 @@ namespace conilines.unity
             int sy = 1;
             return new Vector3(x: (x * size) + sx, y: (y * size) + sy, z: 0);
         }
+        /// <summary>
+        /// Clean up active Lilsteners and kotens, and reinitialize with new ones
+        /// </summary>
         public void SyncField()
         {
             if (associated)
@@ -139,14 +154,18 @@ namespace conilines.unity
             RespawnTokens();
             state = FieldStates.Ready;
         }
-
+        /// <summary>
+        /// Spawn All tokens and teleport them in place
+        /// </summary>
         private void RespawnTokens()
         {
             for (int x = 0; x<FieldData.FieldLength; x++)
                 for (int y = 0; y < FieldData.FieldHeight; y++)                
                     SpawnNewToken(x, y, true);
         }
-
+        /// <summary>
+        /// Destroy all tokens on field
+        /// </summary>
         private void CleanUpTokens()
         {
             foreach (TokenController tk in Tokens)
@@ -155,6 +174,7 @@ namespace conilines.unity
         }
 
         //  Internal functions :D
+
         private void LoadOriginals()
         {
             TokenOriginals = new TokenController[TheGame.maxIndex];
