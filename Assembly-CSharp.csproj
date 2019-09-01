@@ -62,9 +62,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\ProgressBar\Scene\Demo.cs" />
-    <Compile Include="Assets\ProgressBar\Script\ProgressBar.cs" />
-    <Compile Include="Assets\ProgressBar\Script\ProgressBarCircle.cs" />
     <Compile Include="Assets\scripts\CameraController.cs" />
     <Compile Include="Assets\scripts\Director.cs" />
     <Compile Include="Assets\scripts\engine\Directions.cs" />
@@ -76,7 +73,6 @@
     <Compile Include="Assets\scripts\FieldController.cs" />
     <Compile Include="Assets\scripts\GameAction.cs" />
     <Compile Include="Assets\scripts\ScoreUpdate.cs" />
-    <Compile Include="Assets\scripts\tempController.cs" />
     <Compile Include="Assets\scripts\TokenController.cs" />
     <None Include="Assets\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
